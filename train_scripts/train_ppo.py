@@ -93,7 +93,7 @@ model = MAPPO(
     gamma=0.99,
     gae_lambda=0.95,
     clip_range=0.2,
-    ent_coef=0.02,
+    ent_coef=0.05,
     vf_coef=0.3,
     max_grad_norm=0.5,
     policy_kwargs=dict(net_arch=[256, 256], n_global=_GLOBAL_DIM),

@@ -423,10 +423,18 @@ class HouseEnvSB3(gym.Env):
                 _carry = (prev_bfs - curr_bfs) * 1.0
             _pen = _carry
 
-            s += _guide + _pick + _pen
+            _kitchen = 0.0
+            if (carrying_goal and now_label
+                    and agent_room_i == self.goal.target_room
+                    and now_label not in self._ep_kitchen_bonus_given):
+                self._ep_kitchen_bonus_given.add(now_label)
+                _kitchen = 30.0
+
+            s += _guide + _pick + _pen + _kitchen
             self._ep_components["guide"]  += _guide
             self._ep_components["pickup"] += _pick
             self._ep_components["pen"]    += _pen
+            self._ep_components["obs"]    += _kitchen
 
             curr_balls = set(infos[i].get("agent_balls_delivered", []))
             newly_del  = curr_balls - prev_balls[i]
@@ -442,7 +450,7 @@ class HouseEnvSB3(gym.Env):
             _task_complete_stage = _active.issubset(self._ont._all_delivered)
             _comp = 0.0
             if _task_complete_stage and not self._ep_complete_given:
-                _comp = 500.0
+                _comp = 150.0
                 self._ep_complete_given = True
             s += _comp
             self._ep_components["completion"] += _comp
