@@ -420,7 +420,7 @@ class HouseEnvSB3(gym.Env):
                 prev_pos = self._prev_agent_pos[i]
                 curr_bfs = self._bfs_dist.get(curr_pos, _BFS_MAX)
                 prev_bfs = self._bfs_dist.get(prev_pos, _BFS_MAX)
-                _carry = (prev_bfs - curr_bfs) * 0.5
+                _carry = (prev_bfs - curr_bfs) * 1.0
             _pen = _carry
 
             s += _guide + _pick + _pen
