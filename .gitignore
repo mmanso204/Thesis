@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.zip
+*.pkl
+train_scripts/checkpoints_ppo/
+train_scripts/checkpoints_ppo_farmbug_backup_*/
+*.owl.tmp
+/tmp/
+.DS_Store
+*.pt
+checkpoints/

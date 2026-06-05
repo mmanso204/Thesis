@@ -1,0 +1,7 @@
+# Python 3.10 (conda env thesis_py310)
+# Install with: pip install -r requirements.txt
+
+minigrid
+owlapy
+jpype1==1.6.0
+
