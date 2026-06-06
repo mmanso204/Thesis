@@ -1,0 +1,1362 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://www.semanticweb.org/m.manso/ontologies/2026/3/untitled-ontology-30"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     ontologyIRI="http://www.semanticweb.org/m.manso/ontologies/2026/3/untitled-ontology-30">
+    <Prefix name="" IRI="http://www.semanticweb.org/m.manso/ontologies/2026/3/untitled-ontology-30/"/>
+    <Prefix name="Mt" IRI="http://www.semanticweb.org/m.manso/ontologies/2026/3/untitled-ontology-30"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration>
+        <Class IRI="#AccessibleDoor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#AccessibleRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ActiveGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Agent"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Atomic"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Apple"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Avocado"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Banana"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BallObject"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BoxObject"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ChocolateBar"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CollectFoodGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#FindKeyGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#FrontDoorKey"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#FullMissionGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#GardenGateKey"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Grapes"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#JuiceBox"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Kiwi"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Lemon"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Mango"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Orange"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Peach"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Pear"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Pineapple"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Strawberry"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Tomato"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CoatRack"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CoffeeTable"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ComputerMonitor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#KitchenSink"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Nightstand"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#PlantPot"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Refrigerator"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#StorageShelf"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Television"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Toilet"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#UmbrellaStand"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#WaterBottle"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Belief"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BeliefAgent"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BeliefCell"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BeliefDoor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BeliefItem"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BeliefRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BlockedGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#BringCupToKitchen"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Cell"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CollectAllGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CompetingGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CompletedGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CurrentRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Door"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Entity"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#FindObjectGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#GetCup"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Goal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#GoalObject"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#GoalRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#GroupedGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Item"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#KeyObject"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#LockedDoor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#NextGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OpenDoor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OpenDoorGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#PickupGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ReachableGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Room"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#SequenceGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#SkippedGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#State"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Team"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#TransportCupToKitchen"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#UnAccessibleRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#UnreachableGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Wall"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#World"/>
+    </Declaration>
+    <!-- Trash item classes -->
+    <Declaration>
+        <Class IRI="#BrokenToy"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CandyWrapper"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CollectTrashGoal"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CrumpledPaper"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#DirtyPlate"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#DirtySock"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#EmptyCan"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#EmptyBox"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#EmptyShampoo"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#FoodScrap"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#JunkMail"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OldNewspaper"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#PlasticBottle"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#TrashBag"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#UsedCoffeeCup"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#UsedNapkin"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#UsedTissue"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#At"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#BelievedGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#HasGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#InRoom"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#LocatedIn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#ProbablyInRoom"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#ResolvedTargetRoom"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#Unaccesibleto"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#accessibleto1"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#believes"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#conflictsWith"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#connectstoClosedDoor"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#connectstoOpenDoor"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#correspondsToBelief"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#correspondsToWorld"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#dependsOn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#firstGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasDirectTargetGoalObject"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasDirectTargetObject"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasDirectTargetRoom"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasResolvedTargetObject"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasSubGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#memberOf"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#observes"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#previousGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#requiresKey"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#roomConnectedToClosedDoor"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#roomConnectedToOpenDoor"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#secondGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#thirdGoal"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#verifiedBy"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasBeliefAccuracy"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasBeliefConfidence"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasBeliefRewardWeight"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasProgressValue"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasRewardValue"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasShapingWeight"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasWorldTruthValue"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasX"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#hasY"/>
+    </Declaration>
+    <Declaration>
+        <DataProperty IRI="#isTerminal"/>
+    </Declaration>
+    <Declaration>
+        <Datatype IRI="xsd:boolean"/>
+    </Declaration>
+    <Declaration>
+        <Datatype IRI="xsd:decimal"/>
+    </Declaration>
+    <EquivalentClasses>
+        <Class IRI="#AccessibleRoom"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Room"/>
+            <ObjectUnionOf>
+                <Class IRI="#CurrentRoom"/>
+                <ObjectSomeValuesFrom>
+                    <ObjectInverseOf>
+                        <ObjectProperty IRI="#accessibleto1"/>
+                    </ObjectInverseOf>
+                    <Class IRI="#CurrentRoom"/>
+                </ObjectSomeValuesFrom>
+            </ObjectUnionOf>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#BringCupToKitchen"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#SequenceGoal"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#firstGoal"/>
+                <Class IRI="#GetCup"/>
+            </ObjectSomeValuesFrom>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#secondGoal"/>
+                <Class IRI="#TransportCupToKitchen"/>
+            </ObjectSomeValuesFrom>
+            <ObjectAllValuesFrom>
+                <ObjectProperty IRI="#hasSubGoal"/>
+                <ObjectUnionOf>
+                    <Class IRI="#GetCup"/>
+                    <Class IRI="#TransportCupToKitchen"/>
+                </ObjectUnionOf>
+            </ObjectAllValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#CompetingGoal"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Goal"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#conflictsWith"/>
+                <Class IRI="#Goal"/>
+            </ObjectSomeValuesFrom>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+                <ObjectSomeValuesFrom>
+                    <ObjectProperty IRI="#conflictsWith"/>
+                    <Class IRI="#Goal"/>
+                </ObjectSomeValuesFrom>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#CurrentRoom"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Room"/>
+            <ObjectSomeValuesFrom>
+                <ObjectInverseOf>
+                    <ObjectProperty IRI="#LocatedIn"/>
+                </ObjectInverseOf>
+                <Class IRI="#Agent"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#GroupedGoal"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Goal"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#hasSubGoal"/>
+                <Class abbreviatedIRI="owl:Thing"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#ReachableGoal"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Goal"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+                <ObjectIntersectionOf>
+                    <Class IRI="#AccessibleRoom"/>
+                    <Class IRI="#Room"/>
+                </ObjectIntersectionOf>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#SkippedGoal"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Goal"/>
+            <ObjectUnionOf>
+                <Class IRI="#CompletedGoal"/>
+                <Class IRI="#UnreachableGoal"/>
+            </ObjectUnionOf>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#UnAccessibleRoom"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Room"/>
+            <ObjectSomeValuesFrom>
+                <ObjectInverseOf>
+                    <ObjectProperty IRI="#Unaccesibleto"/>
+                </ObjectInverseOf>
+                <Class IRI="#CurrentRoom"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="#UnreachableGoal"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Goal"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+                <ObjectIntersectionOf>
+                    <Class IRI="#Room"/>
+                    <Class IRI="#UnAccessibleRoom"/>
+                </ObjectIntersectionOf>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </EquivalentClasses>
+    <SubClassOf>
+        <Class IRI="#AccessibleDoor"/>
+        <Class IRI="#Door"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#AccessibleRoom"/>
+        <Class IRI="#Room"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ActiveGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Agent"/>
+        <Class IRI="#Entity"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Atomic"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BallObject"/>
+        <Class IRI="#Item"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Belief"/>
+        <Class IRI="#State"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BeliefAgent"/>
+        <Class IRI="#Belief"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BeliefCell"/>
+        <Class IRI="#Belief"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BeliefDoor"/>
+        <Class IRI="#Belief"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BeliefItem"/>
+        <Class IRI="#Belief"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BeliefRoom"/>
+        <Class IRI="#Belief"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BlockedGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#BringCupToKitchen"/>
+        <Class IRI="#SequenceGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Cell"/>
+        <Class IRI="#Entity"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CollectAllGoal"/>
+        <Class IRI="#GroupedGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CompetingGoal"/>
+        <Class IRI="#BlockedGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CompletedGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CurrentRoom"/>
+        <Class IRI="#Room"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Door"/>
+        <Class IRI="#Item"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#FindObjectGoal"/>
+        <Class IRI="#Atomic"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#GetCup"/>
+        <Class IRI="#Atomic"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#GoalObject"/>
+        <Class IRI="#Item"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#GoalRoom"/>
+        <Class IRI="#Room"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#GroupedGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Item"/>
+        <Class IRI="#Entity"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#KeyObject"/>
+        <Class IRI="#Item"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#LockedDoor"/>
+        <Class IRI="#Door"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#NextGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#OpenDoor"/>
+        <Class IRI="#Door"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#OpenDoorGoal"/>
+        <Class IRI="#Atomic"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#PickupGoal"/>
+        <Class IRI="#Atomic"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ReachableGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Room"/>
+        <Class IRI="#Entity"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#SequenceGoal"/>
+        <Class IRI="#GroupedGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#SkippedGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Team"/>
+        <Class IRI="#Entity"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#TransportCupToKitchen"/>
+        <Class IRI="#Atomic"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#UnAccessibleRoom"/>
+        <Class IRI="#Room"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#UnreachableGoal"/>
+        <Class IRI="#Goal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Wall"/>
+        <Class IRI="#Item"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#World"/>
+        <Class IRI="#State"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#ActiveGoal"/>
+            <Class IRI="#GroupedGoal"/>
+        </ObjectIntersectionOf>
+        <ObjectAllValuesFrom>
+            <ObjectProperty IRI="#hasSubGoal"/>
+            <Class IRI="#ActiveGoal"/>
+        </ObjectAllValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Goal"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#previousGoal"/>
+                <ObjectUnionOf>
+                    <Class IRI="#CompletedGoal"/>
+                    <Class IRI="#SkippedGoal"/>
+                </ObjectUnionOf>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#NextGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#GroupedGoal"/>
+            <ObjectAllValuesFrom>
+                <ObjectProperty IRI="#hasSubGoal"/>
+                <Class IRI="#CompletedGoal"/>
+            </ObjectAllValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#CompletedGoal"/>
+    </SubClassOf>
+    <DisjointClasses>
+        <Class IRI="#Agent"/>
+        <Class IRI="#Cell"/>
+        <Class IRI="#Room"/>
+    </DisjointClasses>
+    <DisjointClasses>
+        <Class IRI="#Atomic"/>
+        <Class IRI="#GroupedGoal"/>
+    </DisjointClasses>
+    <DisjointClasses>
+        <Class IRI="#Belief"/>
+        <Class IRI="#World"/>
+    </DisjointClasses>
+    <DisjointClasses>
+        <Class IRI="#BeliefAgent"/>
+        <Class IRI="#BeliefCell"/>
+        <Class IRI="#BeliefDoor"/>
+        <Class IRI="#BeliefItem"/>
+        <Class IRI="#BeliefRoom"/>
+    </DisjointClasses>
+    <DisjointClasses>
+        <Class IRI="#CollectAllGoal"/>
+        <Class IRI="#SequenceGoal"/>
+    </DisjointClasses>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#At"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#BelievedGoal"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#InRoom"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#believes"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#dependsOn"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#firstGoal"/>
+        <ObjectProperty IRI="#hasSubGoal"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#hasDirectTargetGoalObject"/>
+        <ObjectProperty IRI="#hasDirectTargetObject"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#hasDirectTargetObject"/>
+        <ObjectProperty IRI="#hasResolvedTargetObject"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#hasDirectTargetRoom"/>
+        <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#hasSubGoal"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#observes"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#requiresKey"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#secondGoal"/>
+        <ObjectProperty IRI="#hasSubGoal"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#thirdGoal"/>
+        <ObjectProperty IRI="#hasSubGoal"/>
+    </SubObjectPropertyOf>
+    <SymmetricObjectProperty>
+        <ObjectProperty IRI="#conflictsWith"/>
+    </SymmetricObjectProperty>
+    <TransitiveObjectProperty>
+        <ObjectProperty IRI="#accessibleto1"/>
+    </TransitiveObjectProperty>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#At"/>
+        <Class IRI="#Agent"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#BelievedGoal"/>
+        <Class IRI="#BeliefAgent"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#HasGoal"/>
+        <Class IRI="#Agent"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#InRoom"/>
+        <Class IRI="#Entity"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#ProbablyInRoom"/>
+        <Class IRI="#Item"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#believes"/>
+        <Class IRI="#Agent"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#conflictsWith"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#connectstoClosedDoor"/>
+        <Class IRI="#LockedDoor"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#connectstoOpenDoor"/>
+        <Class IRI="#OpenDoor"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#correspondsToBelief"/>
+        <Class IRI="#Belief"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#correspondsToWorld"/>
+        <Class IRI="#World"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#dependsOn"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#firstGoal"/>
+        <Class IRI="#SequenceGoal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#hasDirectTargetGoalObject"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#memberOf"/>
+        <Class IRI="#Agent"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#observes"/>
+        <Class IRI="#Agent"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#previousGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#requiresKey"/>
+        <Class IRI="#Door"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#roomConnectedToClosedDoor"/>
+        <Class IRI="#Room"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#roomConnectedToOpenDoor"/>
+        <Class IRI="#Room"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#secondGoal"/>
+        <Class IRI="#SequenceGoal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#thirdGoal"/>
+        <Class IRI="#SequenceGoal"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#verifiedBy"/>
+        <Class IRI="#Belief"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#At"/>
+        <Class IRI="#Cell"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#BelievedGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#HasGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#InRoom"/>
+        <Class IRI="#Room"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#ProbablyInRoom"/>
+        <Class IRI="#Room"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#believes"/>
+        <Class IRI="#Belief"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#conflictsWith"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#connectstoClosedDoor"/>
+        <Class IRI="#Room"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#connectstoOpenDoor"/>
+        <Class IRI="#Room"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#correspondsToBelief"/>
+        <Class IRI="#Entity"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#correspondsToWorld"/>
+        <Class IRI="#Entity"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#firstGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#hasDirectTargetGoalObject"/>
+        <Class IRI="#GoalObject"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#memberOf"/>
+        <Class IRI="#Team"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#observes"/>
+        <ObjectUnionOf>
+            <Class IRI="#Cell"/>
+            <Class IRI="#Item"/>
+        </ObjectUnionOf>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#previousGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#requiresKey"/>
+        <Class IRI="#KeyObject"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#roomConnectedToClosedDoor"/>
+        <Class IRI="#LockedDoor"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#roomConnectedToOpenDoor"/>
+        <Class IRI="#OpenDoor"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#secondGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#thirdGoal"/>
+        <Class IRI="#Goal"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#verifiedBy"/>
+        <Class IRI="#Agent"/>
+    </ObjectPropertyRange>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectProperty IRI="#At"/>
+            <ObjectProperty IRI="#InRoom"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="#LocatedIn"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectProperty IRI="#hasDirectTargetObject"/>
+            <ObjectProperty IRI="#ProbablyInRoom"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectProperty IRI="#hasSubGoal"/>
+            <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="#hasResolvedTargetRoom"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectProperty IRI="#roomConnectedToClosedDoor"/>
+            <ObjectProperty IRI="#connectstoClosedDoor"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="#Unaccesibleto"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectProperty IRI="#roomConnectedToOpenDoor"/>
+            <ObjectProperty IRI="#connectstoOpenDoor"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="#accessibleto1"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectPropertyChain>
+            <ObjectInverseOf>
+                <ObjectProperty IRI="#secondGoal"/>
+            </ObjectInverseOf>
+            <ObjectProperty IRI="#firstGoal"/>
+        </ObjectPropertyChain>
+        <ObjectProperty IRI="#previousGoal"/>
+    </SubObjectPropertyOf>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasBeliefAccuracy"/>
+        <Class IRI="#Belief"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasBeliefConfidence"/>
+        <Class IRI="#Belief"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasBeliefRewardWeight"/>
+        <Class IRI="#Goal"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasProgressValue"/>
+        <Class IRI="#Goal"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasRewardValue"/>
+        <Class IRI="#Goal"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasShapingWeight"/>
+        <Class IRI="#Goal"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasWorldTruthValue"/>
+        <Class IRI="#World"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasX"/>
+        <Class IRI="#Cell"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#hasY"/>
+        <Class IRI="#Cell"/>
+    </DataPropertyDomain>
+    <DataPropertyDomain>
+        <DataProperty IRI="#isTerminal"/>
+        <Class IRI="#Goal"/>
+    </DataPropertyDomain>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasBeliefAccuracy"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasBeliefConfidence"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasBeliefRewardWeight"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasProgressValue"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasRewardValue"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasShapingWeight"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasWorldTruthValue"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasX"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#hasY"/>
+        <Datatype abbreviatedIRI="xsd:decimal"/>
+    </DataPropertyRange>
+    <DataPropertyRange>
+        <DataProperty IRI="#isTerminal"/>
+        <Datatype abbreviatedIRI="xsd:boolean"/>
+    </DataPropertyRange>
+    <!-- BoxObject and specific item subclasses -->
+    <SubClassOf>
+        <Class IRI="#BoxObject"/>
+        <Class IRI="#Item"/>
+    </SubClassOf>
+    <!-- KeyObject subclasses — actual door keys -->
+    <SubClassOf>
+        <Class IRI="#FrontDoorKey"/>
+        <Class IRI="#KeyObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#GardenGateKey"/>
+        <Class IRI="#KeyObject"/>
+    </SubClassOf>
+    <!-- Goal subclasses -->
+    <SubClassOf>
+        <Class IRI="#CollectFoodGoal"/>
+        <Class IRI="#CollectAllGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CollectTrashGoal"/>
+        <Class IRI="#CollectAllGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#FindKeyGoal"/>
+        <Class IRI="#FindObjectGoal"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#FullMissionGoal"/>
+        <Class IRI="#SequenceGoal"/>
+    </SubClassOf>
+    <!-- BallObject subclasses — food items to collect -->
+    <SubClassOf>
+        <Class IRI="#Apple"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Avocado"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Banana"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ChocolateBar"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Grapes"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#JuiceBox"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Kiwi"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Lemon"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Mango"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Orange"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Peach"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Pear"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Pineapple"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Strawberry"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Tomato"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#WaterBottle"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <!-- BallObject subclasses — trash items to collect -->
+    <SubClassOf>
+        <Class IRI="#BrokenToy"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CandyWrapper"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CrumpledPaper"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#DirtyPlate"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#DirtySock"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#EmptyCan"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#EmptyBox"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#EmptyShampoo"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#FoodScrap"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#JunkMail"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#OldNewspaper"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#PlasticBottle"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#TrashBag"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#UsedCoffeeCup"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#UsedNapkin"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#UsedTissue"/>
+        <Class IRI="#BallObject"/>
+    </SubClassOf>
+    <!-- BoxObject subclasses -->
+    <SubClassOf>
+        <Class IRI="#CoatRack"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#CoffeeTable"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ComputerMonitor"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#KitchenSink"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Nightstand"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#PlantPot"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Refrigerator"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#StorageShelf"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Television"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Toilet"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#UmbrellaStand"/>
+        <Class IRI="#BoxObject"/>
+    </SubClassOf>
+</Ontology>
+
+
+
+<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
+
