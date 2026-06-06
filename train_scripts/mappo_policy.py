@@ -18,7 +18,7 @@ from gymnasium import spaces
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import Schedule
 
-N_AGENTS  = 3
+N_AGENTS  = 2
 N_ACTIONS = 7   # Discrete(7) per agent
 
 

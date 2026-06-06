@@ -53,7 +53,7 @@ STAGE_ADVANCE_RATE   = 0.80
 STAGE_ADVANCE_WINDOW = 100
 
 ENT_START        = 0.06        # explore hard early to discover pickup + delivery
-ENT_END          = 0.012       # sharpen late so the learned behaviour becomes reliable
+ENT_END          = 0.03        # floor: keep enough exploration that pickup never collapses
 ENT_ANNEAL_STEPS = 3_000_000   # linear anneal horizon (≈ Stage-1 budget)
 
 os.makedirs(os.path.join(_HERE, "checkpoints_ppo"), exist_ok=True)
@@ -73,7 +73,7 @@ def make_env(active_items=None, max_steps=None):
         env = HouseEnvSB3(
             ontology_path=ONTOLOGY_PATH,
             goal=active_goal,
-            num_agents=3,
+            num_agents=2,
             max_steps=max_steps or STAGE_MAX_STEPS[0],
             active_items=active_items,
         )
