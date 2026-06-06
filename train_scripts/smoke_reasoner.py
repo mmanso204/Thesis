@@ -15,7 +15,7 @@ import numpy as np
 from envs.environment_sb3 import HouseEnvSB3
 from helper_functions.goals import GOALS
 
-ONT = "/Users/m.manso/Downloads/thesisont_updated-2.owl"
+ONT = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
 N_STEPS = 300
 
 env = HouseEnvSB3(ontology_path=ONT, goal=GOALS["collect_food"], num_agents=3,

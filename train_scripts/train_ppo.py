@@ -35,7 +35,7 @@ from helper_functions.goals import GOALS
 from mappo_policy import MAPPOPolicy
 from mappo import MAPPO
 
-ONTOLOGY_PATH  = "/Users/m.manso/Downloads/thesisont_updated-2.owl"
+ONTOLOGY_PATH  = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
 GOAL_NAME      = "collect_food"
 NUM_AGENTS     = 2
 TOTAL_STEPS    = 45_000_000

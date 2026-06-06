@@ -5,13 +5,13 @@ statistics and the reward-component breakdown.  Optionally renders.
 
 Examples:
     # Evaluate the latest Stage-3 checkpoint over 50 episodes
-    python evaluate_ppo.py --checkpoint checkpoints_ppo/ppo_ep20800_s3 --stage 2 --episodes 50
+    python evaluate_ppo.py --checkpoint checkpoints_ppo/ppo_ep25400_s3 --stage 2 --episodes 50
 
     # Watch 5 episodes render in a window
-    python evaluate_ppo.py --checkpoint checkpoints_ppo/ppo_ep20800_s3 --stage 2 --episodes 5 --render
+    python evaluate_ppo.py --checkpoint checkpoints_ppo/ppo_ep25400_s3 --stage 2 --episodes 5 --render
 
     # Sample actions instead of deterministic argmax
-    python evaluate_ppo.py --checkpoint checkpoints_ppo/ppo_ep20800_s3 --stage 2 --stochastic
+    python evaluate_ppo.py --checkpoint checkpoints_ppo/ppo_ep25400_s3 --stage 2 --stochastic
 """
 
 import argparse
@@ -31,7 +31,7 @@ from mappo_policy import MAPPOPolicy  # noqa: F401  (registers custom policy for
 from mappo import MAPPO
 
 # ── config ────────────────────────────────────────────────────────────
-ONTOLOGY_PATH = "/Users/m.manso/Downloads/thesisont_updated-2.owl"
+ONTOLOGY_PATH = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
 GOAL_NAME     = "collect_food"
 _HERE         = os.path.dirname(os.path.abspath(__file__))
 
