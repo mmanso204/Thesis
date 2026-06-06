@@ -399,7 +399,7 @@ class HouseEnvSB3(gym.Env):
                 )
                 if room_has_undelivered and agent_room_i not in self._ep_idle_rooms_visited[i]:
                     self._ep_idle_rooms_visited[i].add(agent_room_i)
-                    _reexplore = 5.0
+                    _reexplore = 3.0
             _guide = _reexplore
 
             _pick = 0.0
@@ -411,7 +411,7 @@ class HouseEnvSB3(gym.Env):
                            and now_label in _active)
             if just_picked and now_label not in self._ep_pickup_given:
                 self._ep_pickup_given.add(now_label)
-                _pick = 10.0
+                _pick = 20.0
 
             _carry = 0.0
             if carrying_goal:

@@ -52,6 +52,10 @@ STAGE_MAX_STEPS = [2000, 2000, 3000, 4000]
 STAGE_ADVANCE_RATE   = 0.80
 STAGE_ADVANCE_WINDOW = 100
 
+ENT_START        = 0.06        # explore hard early to discover pickup + delivery
+ENT_END          = 0.012       # sharpen late so the learned behaviour becomes reliable
+ENT_ANNEAL_STEPS = 3_000_000   # linear anneal horizon (≈ Stage-1 budget)
+
 os.makedirs(os.path.join(_HERE, "checkpoints_ppo"), exist_ok=True)
 active_goal = GOALS[GOAL_NAME]
 N_ITEMS     = len(active_goal.target_items)
@@ -93,7 +97,7 @@ model = MAPPO(
     gamma=0.99,
     gae_lambda=0.95,
     clip_range=0.2,
-    ent_coef=0.05,
+    ent_coef=ENT_START,
     vf_coef=0.3,
     max_grad_norm=0.5,
     policy_kwargs=dict(net_arch=[256, 256], n_global=_GLOBAL_DIM),
@@ -180,6 +184,9 @@ class PPOCallback(BaseCallback):
             self.recent50.append(ep_r)
             if len(self.recent50) > 50:
                 self.recent50.pop(0)
+
+            frac = min(1.0, self.num_timesteps / ENT_ANNEAL_STEPS)
+            self.model.ent_coef = ENT_START + frac * (ENT_END - ENT_START)
 
             avg50 = np.mean(self.recent50)
             balls = info.get("balls_delivered", 0)
