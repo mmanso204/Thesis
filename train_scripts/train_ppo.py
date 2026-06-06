@@ -1,12 +1,16 @@
 """Train the ontology-guided MAPPO agent with curriculum learning.
 
 Curriculum stages (auto-advance at 80% completion over 100 episodes):
-  Stage 1 — banana + mango           (2 items, living_room only)
-  Stage 2 — + orange + grapes        (4 items, full main floor)
-  Stage 3 — all 8 items              (full house)
+  Stage 1 — banana                   (1 item)
+  Stage 2 — banana + mango           (2 items)
+  Stage 3 — + orange + grapes        (4 items)
+  Stage 4 — all 8 items
 
 Run:
     python train_ppo.py
+
+Parallel envs (big speedup on multi-core machines / cloud):
+    N_ENVS=8 python train_ppo.py        # one env per CPU core
 
 Resume from checkpoint:
     Set RESUME_FROM to the saved .zip path.
@@ -21,7 +25,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.buffers import RolloutBuffer
@@ -33,13 +37,18 @@ from mappo import MAPPO
 
 ONTOLOGY_PATH  = "/Users/m.manso/Downloads/thesisont_updated-2.owl"
 GOAL_NAME      = "collect_food"
-MAX_EP_STEPS   = 4000
+NUM_AGENTS     = 2
 TOTAL_STEPS    = 45_000_000
 SAVE_EVERY_EPS = 200
 _HERE          = os.path.dirname(os.path.abspath(__file__))
 RESUME_FROM    = None
 RESUME_STAGE   = 0
 LOG_CSV        = os.path.join(_HERE, "checkpoints_ppo", "training_log.csv")
+
+# Parallel rollout collection. Set N_ENVS to the number of CPU cores available.
+# Each env runs in its own process with its own JVM/ontology (memory ~ N_ENVS JVMs).
+N_ENVS           = int(os.environ.get("N_ENVS", "1"))
+ROLLOUT_EPISODES = 4   # target full episodes per gradient update, summed over all envs
 
 CURRICULUM_STAGES = [
     ["banana"],
@@ -68,12 +77,18 @@ if RESUME_FROM:
         _START_EP = int(_m.group(1))
 
 
+def rollout_nsteps(stage_idx: int) -> int:
+    """Per-env rollout length so that n_steps × N_ENVS ≈ ROLLOUT_EPISODES episodes.
+    With N_ENVS=1 this reduces to the original 4 × stage_max_steps."""
+    return max(1, (ROLLOUT_EPISODES * STAGE_MAX_STEPS[stage_idx]) // N_ENVS)
+
+
 def make_env(active_items=None, max_steps=None):
     def _init():
         env = HouseEnvSB3(
             ontology_path=ONTOLOGY_PATH,
             goal=active_goal,
-            num_agents=2,
+            num_agents=NUM_AGENTS,
             max_steps=max_steps or STAGE_MAX_STEPS[0],
             active_items=active_items,
         )
@@ -81,49 +96,10 @@ def make_env(active_items=None, max_steps=None):
     return _init
 
 
-_initial_stage = RESUME_STAGE if RESUME_FROM else 0
-_raw_env = DummyVecEnv([make_env(active_items=CURRICULUM_STAGES[_initial_stage],
-                                  max_steps=STAGE_MAX_STEPS[_initial_stage])])
-vec_env  = VecNormalize(_raw_env, norm_obs=False, norm_reward=True, clip_reward=10.0)
-
-model = MAPPO(
-    MAPPOPolicy,
-    vec_env,
-    verbose=0,
-    learning_rate=1e-4,
-    n_steps=8000,
-    batch_size=800,
-    n_epochs=5,
-    gamma=0.99,
-    gae_lambda=0.95,
-    clip_range=0.2,
-    ent_coef=ENT_START,
-    vf_coef=0.3,
-    max_grad_norm=0.5,
-    policy_kwargs=dict(net_arch=[256, 256], n_global=_GLOBAL_DIM),
-    tensorboard_log=None,
-)
-
-if RESUME_FROM and os.path.exists(RESUME_FROM):
-    vecnorm_path = RESUME_FROM.replace(".zip", "_vecnorm.pkl")
-    if os.path.exists(vecnorm_path):
-        vec_env = VecNormalize.load(vecnorm_path, _raw_env)
-    model = MAPPO.load(RESUME_FROM, env=vec_env)
-    model.n_steps    = 4 * STAGE_MAX_STEPS[RESUME_STAGE]
-    model.batch_size = model.n_steps // 10
-    model.vf_coef    = 0.3
-    model.ent_coef   = 0.01
-    model.rollout_buffer = RolloutBuffer(
-        model.n_steps, model.observation_space, model.action_space,
-        device=model.device, gamma=model.gamma, gae_lambda=model.gae_lambda,
-        n_envs=model.n_envs,
-    )
-    house_env = vec_env.venv.envs[0].env
-    _resume_active = CURRICULUM_STAGES[RESUME_STAGE]
-    house_env.active_items = set(_resume_active) if _resume_active is not None else None
-    house_env.max_steps    = STAGE_MAX_STEPS[RESUME_STAGE]
-    print(f"Resumed from {RESUME_FROM}  (episode offset: {_START_EP})")
-    print(f"Resuming on Stage {RESUME_STAGE}: {_resume_active or 'ALL'}")
+def build_vec_env(active_items, max_steps):
+    fns = [make_env(active_items=active_items, max_steps=max_steps) for _ in range(N_ENVS)]
+    raw = SubprocVecEnv(fns) if N_ENVS > 1 else DummyVecEnv(fns)
+    return raw
 
 
 _CSV_FIELDS = [
@@ -158,7 +134,8 @@ class PPOCallback(BaseCallback):
             self._csv_w.writeheader()
 
         print(f"\nGoal : {active_goal.name}")
-        print(f"Items: {N_ITEMS}  |  target: {active_goal.target_room}  |  agents: 3")
+        print(f"Items: {N_ITEMS}  |  target: {active_goal.target_room}  |  "
+              f"agents: {NUM_AGENTS}  |  parallel envs: {N_ENVS}")
         print(f"Curriculum: {len(CURRICULUM_STAGES)} stages")
         for i, s in enumerate(CURRICULUM_STAGES):
             n = len(s) if s else N_ITEMS
@@ -278,14 +255,13 @@ class CurriculumCallback(PPOCallback):
         new_active   = CURRICULUM_STAGES[self._stage]
         new_maxsteps = STAGE_MAX_STEPS[self._stage]
 
-        vec_env   = self.model.get_env()
-        house_env = vec_env.venv.envs[0].env
-        house_env.active_items = set(new_active) if new_active is not None else None
-        house_env.max_steps    = new_maxsteps
+        # Push the new stage to every worker env (works for Dummy + Subproc).
+        vec_env = self.model.get_env()
+        vec_env.env_method("set_curriculum", new_active, new_maxsteps)
 
-        new_n_steps = 4 * new_maxsteps
+        new_n_steps = rollout_nsteps(self._stage)
         self.model.n_steps    = new_n_steps
-        self.model.batch_size = new_n_steps // 10
+        self.model.batch_size = max(1, (new_n_steps * self.model.n_envs) // 10)
         self.model.rollout_buffer = RolloutBuffer(
             new_n_steps, self.model.observation_space, self.model.action_space,
             device=self.model.device, gamma=self.model.gamma,
@@ -295,9 +271,8 @@ class CurriculumCallback(PPOCallback):
         path = os.path.join(_HERE, "checkpoints_ppo",
                             f"ppo_stage{self._stage}_ep{self.ep_count:04d}")
         self.model.save(path)
-        env = self.model.get_env()
-        if isinstance(env, VecNormalize):
-            env.save(path + "_vecnorm.pkl")
+        if isinstance(vec_env, VecNormalize):
+            vec_env.save(path + "_vecnorm.pkl")
 
         self._stage_hist = []
 
@@ -311,13 +286,59 @@ class CurriculumCallback(PPOCallback):
         print(f"{'='*76}\n")
 
 
-model.learn(
-    total_timesteps=TOTAL_STEPS,
-    callback=CurriculumCallback(save_every=SAVE_EVERY_EPS, start_ep=_START_EP,
-                               start_stage=RESUME_STAGE if RESUME_FROM else 0),
-    reset_num_timesteps=(RESUME_FROM is None),
-)
+def main():
+    initial_stage = RESUME_STAGE if RESUME_FROM else 0
+    raw_env = build_vec_env(CURRICULUM_STAGES[initial_stage], STAGE_MAX_STEPS[initial_stage])
+    vec_env = VecNormalize(raw_env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
-model.save(os.path.join(_HERE, "checkpoints_ppo", "ppo_final"))
-vec_env.close()
-print("Training complete.")
+    model = MAPPO(
+        MAPPOPolicy,
+        vec_env,
+        verbose=0,
+        learning_rate=1e-4,
+        n_steps=rollout_nsteps(initial_stage),
+        batch_size=max(1, (rollout_nsteps(initial_stage) * N_ENVS) // 10),
+        n_epochs=5,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2,
+        ent_coef=ENT_START,
+        vf_coef=0.3,
+        max_grad_norm=0.5,
+        policy_kwargs=dict(net_arch=[256, 256], n_global=_GLOBAL_DIM),
+        tensorboard_log=None,
+    )
+
+    if RESUME_FROM and os.path.exists(RESUME_FROM):
+        vecnorm_path = RESUME_FROM.replace(".zip", "_vecnorm.pkl")
+        if os.path.exists(vecnorm_path):
+            vec_env = VecNormalize.load(vecnorm_path, raw_env)
+        model = MAPPO.load(RESUME_FROM, env=vec_env)
+        model.n_steps    = rollout_nsteps(RESUME_STAGE)
+        model.batch_size = max(1, (model.n_steps * model.n_envs) // 10)
+        model.vf_coef    = 0.3
+        model.ent_coef   = 0.01
+        model.rollout_buffer = RolloutBuffer(
+            model.n_steps, model.observation_space, model.action_space,
+            device=model.device, gamma=model.gamma, gae_lambda=model.gae_lambda,
+            n_envs=model.n_envs,
+        )
+        _resume_active = CURRICULUM_STAGES[RESUME_STAGE]
+        vec_env.env_method("set_curriculum", _resume_active, STAGE_MAX_STEPS[RESUME_STAGE])
+        print(f"Resumed from {RESUME_FROM}  (episode offset: {_START_EP})")
+        print(f"Resuming on Stage {RESUME_STAGE}: {_resume_active or 'ALL'}")
+
+    model.learn(
+        total_timesteps=TOTAL_STEPS,
+        callback=CurriculumCallback(save_every=SAVE_EVERY_EPS, start_ep=_START_EP,
+                                    start_stage=RESUME_STAGE if RESUME_FROM else 0),
+        reset_num_timesteps=(RESUME_FROM is None),
+    )
+
+    model.save(os.path.join(_HERE, "checkpoints_ppo", "ppo_final"))
+    vec_env.close()
+    print("Training complete.")
+
+
+if __name__ == "__main__":
+    main()

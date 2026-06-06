@@ -523,7 +523,7 @@ class Agent:
         }
 
     def _get_reasoner(self):
-        save_path = f"/tmp/agent_{self.agent_id}_abox.owl"
+        save_path = f"/tmp/agent_{self.agent_id}_{os.getpid()}_abox.owl"
         with open(os.devnull, "w") as _devnull:
             _stdout, sys.stdout = sys.stdout, _devnull
             try:

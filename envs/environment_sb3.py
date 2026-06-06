@@ -92,6 +92,11 @@ class HouseEnvSB3(gym.Env):
         self._bfs_dist:               dict = {}
         self._item_bfs:               dict = {}
 
+    def set_curriculum(self, active_items, max_steps):
+        """Update the active curriculum stage. Called via VecEnv.env_method so it
+        reaches every worker process when training with SubprocVecEnv."""
+        self.active_items = set(active_items) if active_items is not None else None
+        self.max_steps    = max_steps
 
     def _ont_features(self, current_room: Optional[str], keys_c, balls_d,
                       carrying: bool, agent_id: int) -> np.ndarray:
