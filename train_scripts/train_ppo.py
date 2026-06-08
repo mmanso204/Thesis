@@ -29,6 +29,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNorm
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.buffers import RolloutBuffer
+from stable_baselines3.common.utils import set_random_seed
 
 from envs.environment_sb3 import HouseEnvSB3
 from helper_functions.goals import GOALS
@@ -36,36 +37,54 @@ from mappo_policy import MAPPOPolicy
 from mappo import MAPPO
 
 ONTOLOGY_PATH  = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
-GOAL_NAME      = "collect_food"
-NUM_AGENTS     = 2
-TOTAL_STEPS    = 45_000_000
+# ── experiment knobs (all env-overridable so a runner can sweep them) ──────────
+GOAL_NAME      = os.environ.get("GOAL_NAME", "collect_food")   # collect_food | collect_trash
+USE_ONTOLOGY   = os.environ.get("USE_ONTOLOGY", "1") not in ("0", "false", "False")
+PROXIMITY      = int(os.environ.get("PROXIMITY", "5"))         # ABox sharing radius (0 = independent)
+SEED           = int(os.environ.get("SEED", "0"))              # reproducibility / multi-seed
+RUN_NAME       = os.environ.get("RUN_NAME", "ppo")             # output folder suffix
+NUM_AGENTS     = 2                                             # must match N_AGENTS in mappo_policy
+TOTAL_STEPS    = int(os.environ.get("TOTAL_STEPS", "45000000"))
 SAVE_EVERY_EPS = 200
 _HERE          = os.path.dirname(os.path.abspath(__file__))
-RESUME_FROM    = None
-RESUME_STAGE   = 0
-LOG_CSV        = os.path.join(_HERE, "checkpoints_ppo", "training_log.csv")
+RESUME_FROM    = os.environ.get("RESUME_FROM") or None
+RESUME_STAGE   = int(os.environ.get("RESUME_STAGE", "0"))
+CKPT_DIR       = os.path.join(_HERE, f"checkpoints_{RUN_NAME}")
+LOG_CSV        = os.path.join(CKPT_DIR, "training_log.csv")
 
 # Parallel rollout collection. Set N_ENVS to the number of CPU cores available.
 # Each env runs in its own process with its own JVM/ontology (memory ~ N_ENVS JVMs).
 N_ENVS           = int(os.environ.get("N_ENVS", "1"))
 ROLLOUT_EPISODES = 4   # target full episodes per gradient update, summed over all envs
 
-CURRICULUM_STAGES = [
-    ["banana"],
-    ["banana", "mango"],
-    ["banana", "mango", "orange", "grapes"],
-    None,
-]
-STAGE_MAX_STEPS = [2000, 2000, 3000, 4000]
+# Curriculum is goal-specific: same 1 → 2 → 4 → all shape, but the item labels
+# (and the all-items final stage) depend on which goal is being trained.
+_CURRICULUM_BY_GOAL = {
+    "collect_food": (
+        [["banana"],
+         ["banana", "mango"],
+         ["banana", "mango", "orange", "grapes"],
+         None],
+        [2000, 2000, 4500, 4000],
+    ),
+    "collect_trash": (
+        [["plastic bottle"],
+         ["plastic bottle", "trash bag"],
+         ["plastic bottle", "trash bag", "old newspaper", "empty can"],
+         None],
+        [2000, 2000, 4500, 6000],   # 16 items in the final stage → larger budget
+    ),
+}
+CURRICULUM_STAGES, STAGE_MAX_STEPS = _CURRICULUM_BY_GOAL[GOAL_NAME]
 
 STAGE_ADVANCE_RATE   = 0.80
 STAGE_ADVANCE_WINDOW = 100
 
-ENT_START        = 0.06        # explore hard early to discover pickup + delivery
-ENT_END          = 0.03        # floor: keep enough exploration that pickup never collapses
-ENT_ANNEAL_STEPS = 3_000_000   # linear anneal horizon (≈ Stage-1 budget)
+ENT_START        = float(os.environ.get("ENT_START", "0.06"))  # explore hard early to discover pickup + delivery
+ENT_END          = float(os.environ.get("ENT_END", "0.05"))    # floor: keep enough exploration that pickup never collapses
+ENT_ANNEAL_STEPS = int(os.environ.get("ENT_ANNEAL_STEPS", "3000000"))  # linear anneal horizon (≈ Stage-1 budget)
 
-os.makedirs(os.path.join(_HERE, "checkpoints_ppo"), exist_ok=True)
+os.makedirs(CKPT_DIR, exist_ok=True)
 active_goal = GOALS[GOAL_NAME]
 N_ITEMS     = len(active_goal.target_items)
 _GLOBAL_DIM = N_ITEMS * 4
@@ -91,6 +110,8 @@ def make_env(active_items=None, max_steps=None):
             num_agents=NUM_AGENTS,
             max_steps=max_steps or STAGE_MAX_STEPS[0],
             active_items=active_items,
+            proximity_threshold=PROXIMITY,
+            use_ontology=USE_ONTOLOGY,
         )
         return Monitor(env)
     return _init
@@ -199,7 +220,7 @@ class PPOCallback(BaseCallback):
                 self._comp_buf[k].append(comp.get(k, 0.0))
 
             if self.ep_count % self.save_every == 0:
-                path = os.path.join(_HERE, "checkpoints_ppo",
+                path = os.path.join(CKPT_DIR,
                                     f"ppo_ep{self.ep_count:04d}_s{stage}")
                 self.model.save(path)
                 env = self.model.get_env()
@@ -268,7 +289,7 @@ class CurriculumCallback(PPOCallback):
             gae_lambda=self.model.gae_lambda, n_envs=self.model.n_envs,
         )
 
-        path = os.path.join(_HERE, "checkpoints_ppo",
+        path = os.path.join(CKPT_DIR,
                             f"ppo_stage{self._stage}_ep{self.ep_count:04d}")
         self.model.save(path)
         if isinstance(vec_env, VecNormalize):
@@ -287,8 +308,19 @@ class CurriculumCallback(PPOCallback):
 
 
 def main():
+    print("=" * 76)
+    print(f"  RUN: {RUN_NAME}")
+    print(f"  goal={GOAL_NAME}  use_ontology={USE_ONTOLOGY}  proximity={PROXIMITY}  "
+          f"seed={SEED}  agents={NUM_AGENTS}")
+    print(f"  total_steps={TOTAL_STEPS:,}  n_envs={N_ENVS}  "
+          f"ent={ENT_START}->{ENT_END}  output={CKPT_DIR}")
+    print("=" * 76)
+
+    set_random_seed(SEED)
+
     initial_stage = RESUME_STAGE if RESUME_FROM else 0
     raw_env = build_vec_env(CURRICULUM_STAGES[initial_stage], STAGE_MAX_STEPS[initial_stage])
+    raw_env.seed(SEED)
     vec_env = VecNormalize(raw_env, norm_obs=False, norm_reward=True, clip_reward=10.0)
 
     model = MAPPO(
@@ -305,6 +337,7 @@ def main():
         ent_coef=ENT_START,
         vf_coef=0.3,
         max_grad_norm=0.5,
+        seed=SEED,
         policy_kwargs=dict(net_arch=[256, 256], n_global=_GLOBAL_DIM),
         tensorboard_log=None,
     )
@@ -335,9 +368,11 @@ def main():
         reset_num_timesteps=(RESUME_FROM is None),
     )
 
-    model.save(os.path.join(_HERE, "checkpoints_ppo", "ppo_final"))
+    model.save(os.path.join(CKPT_DIR, "ppo_final"))
+    if isinstance(vec_env, VecNormalize):
+        vec_env.save(os.path.join(CKPT_DIR, "ppo_final_vecnorm.pkl"))
     vec_env.close()
-    print("Training complete.")
+    print(f"Training complete. ({RUN_NAME})")
 
 
 if __name__ == "__main__":

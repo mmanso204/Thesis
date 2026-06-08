@@ -48,12 +48,17 @@ class HouseEnvSB3(gym.Env):
         proximity_threshold: int = 5,
         render_mode: str = None,
         active_items: list = None,
+        use_ontology: bool = True,
     ):
         super().__init__()
 
         self.goal                = goal
         self.num_agents          = num_agents
         self.proximity_threshold = proximity_threshold
+        # Vanilla baseline (SQ1): when False, the ontology-derived observation
+        # features are zeroed and the ontology guide reward is disabled, so the
+        # agent gets no semantic knowledge. Everything else stays identical.
+        self.use_ontology        = use_ontology
         self._n_items            = len(goal.target_items)
         self.active_items: set = set(active_items) if active_items is not None else None
         self.max_steps = max_steps
@@ -175,6 +180,10 @@ class HouseEnvSB3(gym.Env):
             dir_v = np.zeros(4, dtype=np.float32)
             dir_v[int(obs_dict[i].get("direction", 0)) % 4] = 1.0
             feats = self._ont_features(obs_data["Current_room"], keys_c, balls_d, carrying, i)
+            if not self.use_ontology:
+                # Vanilla baseline: strip all ontology-derived knowledge from the
+                # actor's observation while keeping the vector size identical.
+                feats = np.zeros_like(feats)
 
             px, py = int(pos[0]), int(pos[1])
             bfs_d  = self._bfs_dist.get((px, py), _BFS_MAX)
@@ -394,7 +403,9 @@ class HouseEnvSB3(gym.Env):
             self._ep_components["expl"] += _expl
 
             _reexplore = 0.0
-            if not carrying_goal and agent_room_i:
+            # The guide reward uses ontology knowledge (which rooms still hold
+            # undelivered items), so it is disabled for the vanilla baseline.
+            if self.use_ontology and not carrying_goal and agent_room_i:
                 room_items_here = self.goal.room_items.get(agent_room_i, [])
                 room_has_undelivered = any(
                     item.label in _active

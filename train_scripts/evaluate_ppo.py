@@ -30,19 +30,32 @@ from helper_functions.goals import GOALS
 from mappo_policy import MAPPOPolicy  # noqa: F401  (registers custom policy for load)
 from mappo import MAPPO
 
-# ── config ────────────────────────────────────────────────────────────
+# ── config (env-overridable so it matches whichever run is being evaluated) ──
 ONTOLOGY_PATH = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
-GOAL_NAME     = "collect_food"
+GOAL_NAME     = os.environ.get("GOAL_NAME", "collect_food")
+USE_ONTOLOGY  = os.environ.get("USE_ONTOLOGY", "1") not in ("0", "false", "False")
+PROXIMITY     = int(os.environ.get("PROXIMITY", "5"))
+NUM_AGENTS    = 2                       # must match N_AGENTS in mappo_policy / training
 _HERE         = os.path.dirname(os.path.abspath(__file__))
 
-# Must match train_ppo.py
-CURRICULUM_STAGES = [
-    ["banana"],                                   # Stage 0
-    ["banana", "mango"],                          # Stage 1
-    ["banana", "mango", "orange", "grapes"],      # Stage 2
-    None,                                         # Stage 3: all 8
-]
-STAGE_MAX_STEPS = [2000, 2000, 3000, 4000]
+# Must match train_ppo.py — curriculum is goal-specific.
+_CURRICULUM_BY_GOAL = {
+    "collect_food": (
+        [["banana"],
+         ["banana", "mango"],
+         ["banana", "mango", "orange", "grapes"],
+         None],
+        [2000, 2000, 4500, 4000],
+    ),
+    "collect_trash": (
+        [["plastic bottle"],
+         ["plastic bottle", "trash bag"],
+         ["plastic bottle", "trash bag", "old newspaper", "empty can"],
+         None],
+        [2000, 2000, 4500, 6000],
+    ),
+}
+CURRICULUM_STAGES, STAGE_MAX_STEPS = _CURRICULUM_BY_GOAL[GOAL_NAME]
 # ──────────────────────────────────────────────────────────────────────
 
 
@@ -51,10 +64,12 @@ def make_env(goal, active_items, max_steps, render_mode=None):
         env = HouseEnvSB3(
             ontology_path=ONTOLOGY_PATH,
             goal=goal,
-            num_agents=3,
+            num_agents=NUM_AGENTS,
             max_steps=max_steps,
             active_items=active_items,
             render_mode=render_mode,
+            proximity_threshold=PROXIMITY,
+            use_ontology=USE_ONTOLOGY,
         )
         return Monitor(env)
     return _init
@@ -83,6 +98,7 @@ def evaluate(checkpoint, stage, episodes, deterministic, render):
     model = MAPPO.load(checkpoint, env=env)
 
     print(f"\nEvaluating: {os.path.basename(checkpoint)}")
+    print(f"goal={GOAL_NAME}  use_ontology={USE_ONTOLOGY}  proximity={PROXIMITY}  agents={NUM_AGENTS}")
     print(f"Stage {stage}: {active_items or 'ALL'}  ({n_target} items)  |  "
           f"max_steps={max_steps}  |  {'deterministic' if deterministic else 'stochastic'}")
     print("─" * 72)
