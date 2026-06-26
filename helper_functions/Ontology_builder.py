@@ -11,17 +11,17 @@ from owlapy.class_expression import OWLClass
 from owlapy.owl_property import OWLObjectProperty, OWLDataProperty
 from owlapy.owl_literal import OWLLiteral
 from owlapy.owl_reasoner import StructuralReasoner
-from envs.environment_multi import HouseEnv          # FIX #6: was "environment"
+from envs.environment_multi import HouseEnv
 from typing import List
 
 NS = "http://www.semanticweb.org/m.manso/ontologies/2026/3/untitled-ontology-30#"
 
-# OWL property names — must match the TBox exactly (same as agent.py)
+# OWL property names, must match the TBox exactly (same as agent.py)
 PROP_CONNECTS_TO = "connectsTo"
 PROP_LOCATED_IN  = "locatedIn"
 PROP_HAS_COLOR   = "hasColor"
 
-# Maps box (furniture) label → specific ontology subclass name
+# box (furniture) label -> specific ontology subclass name
 FURNITURE_CLASS_MAP: dict[str, str] = {
     "plant pot":        "PlantPot",
     "coat rack":        "CoatRack",
@@ -51,7 +51,7 @@ class StaticOntologyBuilder:
 
         ont: Ontology = Ontology(ontology_path, load=True)
 
-        # ── OWL classes ──────────────────────────────────────────────────
+        # OWL classes
         room_class = OWLClass(IRI.create(NS, "Room"))
         door_class = OWLClass(IRI.create(NS, "Door"))
         cell_class = OWLClass(IRI.create(NS, "Cell"))
@@ -60,12 +60,12 @@ class StaticOntologyBuilder:
         ball_class = OWLClass(IRI.create(NS, "BallObject"))
         box_class  = OWLClass(IRI.create(NS, "BoxObject"))
 
-        # ── OWL properties (FIX #3: names match TBox / agent.py) ─────────
+        # OWL properties
         connects_to  = OWLObjectProperty(IRI.create(NS, PROP_CONNECTS_TO))
         located_in   = OWLObjectProperty(IRI.create(NS, PROP_LOCATED_IN))
         has_color    = OWLDataProperty(IRI.create(NS, PROP_HAS_COLOR))
 
-        # ── Cells ─────────────────────────────────────────────────────────
+        # Cells
         for x in range(env.width):
             for y in range(env.height):
                 cell_ind = OWLNamedIndividual(IRI.create(NS, f"cell_{x}_{y}"))
@@ -75,7 +75,7 @@ class StaticOntologyBuilder:
                 if cell_obj and cell_obj.type == "wall":
                     ont.add_axiom(OWLClassAssertionAxiom(cell_ind, wall_class))
 
-        # ── Rooms ─────────────────────────────────────────────────────────
+        # Rooms
         room_individuals: dict[str, OWLNamedIndividual] = {}
         for room_name in env.get_all_rooms():
             room_ind = OWLNamedIndividual(IRI.create(NS, room_name.replace(" ", "_")))
@@ -89,7 +89,7 @@ class StaticOntologyBuilder:
                     room_ind, has_color, OWLLiteral(color)
                 ))
 
-        # ── Doors + connectsTo ────────────────────────────────────────────
+        # Doors + connectsTo
         door_individuals: dict[tuple, tuple] = {}
         for x in range(env.width):
             for y in range(env.height):
@@ -112,7 +112,7 @@ class StaticOntologyBuilder:
                         room_individuals[room_name], connects_to, door_ind
                     ))
 
-        # ── Items (balls / boxes) ─────────────────────────────────────────
+        # Items (balls / boxes)
         for x in range(env.width):
             for y in range(env.height):
                 cell = env.grid.get(x, y)
@@ -161,36 +161,35 @@ class StaticOntologyBuilder:
 
         print("\n=== STATIC ONTOLOGY (TBox + initial ABox) ===")
 
-        print("\n── Rooms ──")
+        print("\nRooms")
         room_class = OWLClass(IRI.create(NS, "Room"))
         for r in reasoner.instances(room_class):
-            print(f"  • {r.iri.remainder}")
+            print(f"  {r.iri.remainder}")
 
-        print("\n── Doors + connectsTo ──")
+        print("\nDoors + connectsTo")
         door_class   = OWLClass(IRI.create(NS, "Door"))
         connects_to  = OWLObjectProperty(IRI.create(NS, PROP_CONNECTS_TO))
         for d in reasoner.instances(door_class):
             targets = [v.iri.remainder
                        for v in reasoner.object_property_values(d, connects_to)]
-            print(f"  • {d.iri.remainder} → {targets}")
+            print(f"  {d.iri.remainder} -> {targets}")
 
-        print("\n── Items in ontology ──")
+        print("\nItems in ontology")
         item_class = OWLClass(IRI.create(NS, "Item"))
         items = list(reasoner.instances(item_class))
         print(f"  Total: {len(items)}")
         for item in items:
-            print(f"  • {item.iri.remainder}")
+            print(f"  {item.iri.remainder}")
 
-        print("\n── Room colors (hasColor) ──")
+        print("\nRoom colors (hasColor)")
         has_color = OWLDataProperty(IRI.create(NS, PROP_HAS_COLOR))
         for r in reasoner.instances(room_class):
             colors = [v.get_literal()
                       for v in reasoner.data_property_values(r, has_color)]
             if colors:
-                print(f"  • {r.iri.remainder} → {colors[0]}")
+                print(f"  {r.iri.remainder} -> {colors[0]}")
 
 
-# ── Quick smoke-test (run this file directly to verify the TBox loads) ────────
 if __name__ == "__main__":
     print("Building environment and static ontology...")
     env = HouseEnv(num_agents=1)

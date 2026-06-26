@@ -1,21 +1,3 @@
-"""Train the ontology-guided MAPPO agent with curriculum learning.
-
-Curriculum stages (auto-advance at 80% completion over 100 episodes):
-  Stage 1 — banana                   (1 item)
-  Stage 2 — banana + mango           (2 items)
-  Stage 3 — + orange + grapes        (4 items)
-  Stage 4 — all 8 items
-
-Run:
-    python train_ppo.py
-
-Parallel envs (big speedup on multi-core machines / cloud):
-    N_ENVS=8 python train_ppo.py        # one env per CPU core
-
-Resume from checkpoint:
-    Set RESUME_FROM to the saved .zip path.
-"""
-
 import csv
 import os
 import re
@@ -37,7 +19,7 @@ from mappo_policy import MAPPOPolicy
 from mappo import MAPPO
 
 ONTOLOGY_PATH  = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
-# ── experiment knobs (all env-overridable so a runner can sweep them) ──────────
+# experiment knobs (all env-overridable so a runner can sweep them)
 GOAL_NAME      = os.environ.get("GOAL_NAME", "collect_food")   # collect_food | collect_trash
 USE_ONTOLOGY   = os.environ.get("USE_ONTOLOGY", "1") not in ("0", "false", "False")
 PROXIMITY      = int(os.environ.get("PROXIMITY", "5"))         # ABox sharing radius (0 = independent)
@@ -57,8 +39,8 @@ LOG_CSV        = os.path.join(CKPT_DIR, "training_log.csv")
 N_ENVS           = int(os.environ.get("N_ENVS", "1"))
 ROLLOUT_EPISODES = 4   # target full episodes per gradient update, summed over all envs
 
-# Curriculum is goal-specific: same 1 → 2 → 4 → all shape, but the item labels
-# (and the all-items final stage) depend on which goal is being trained.
+# Curriculum is goal-specific: same 1 -> 2 -> 4 -> all shape, but the item
+# labels (and the all-items final stage) depend on which goal is being trained.
 _CURRICULUM_BY_GOAL = {
     "collect_food": (
         [["banana"],
@@ -72,7 +54,7 @@ _CURRICULUM_BY_GOAL = {
          ["plastic bottle", "trash bag"],
          ["plastic bottle", "trash bag", "old newspaper", "empty can"],
          None],
-        [2000, 2000, 4500, 6000],   # 16 items in the final stage → larger budget
+        [2000, 2000, 4500, 6000],   # 16 items in the final stage, so larger budget
     ),
 }
 CURRICULUM_STAGES, STAGE_MAX_STEPS = _CURRICULUM_BY_GOAL[GOAL_NAME]
@@ -82,7 +64,7 @@ STAGE_ADVANCE_WINDOW = 100
 
 ENT_START        = float(os.environ.get("ENT_START", "0.06"))  # explore hard early to discover pickup + delivery
 ENT_END          = float(os.environ.get("ENT_END", "0.05"))    # floor: keep enough exploration that pickup never collapses
-ENT_ANNEAL_STEPS = int(os.environ.get("ENT_ANNEAL_STEPS", "3000000"))  # linear anneal horizon (≈ Stage-1 budget)
+ENT_ANNEAL_STEPS = int(os.environ.get("ENT_ANNEAL_STEPS", "3000000"))  # linear anneal horizon (~ Stage-1 budget)
 
 os.makedirs(CKPT_DIR, exist_ok=True)
 active_goal = GOALS[GOAL_NAME]
@@ -97,8 +79,8 @@ if RESUME_FROM:
 
 
 def rollout_nsteps(stage_idx: int) -> int:
-    """Per-env rollout length so that n_steps × N_ENVS ≈ ROLLOUT_EPISODES episodes.
-    With N_ENVS=1 this reduces to the original 4 × stage_max_steps."""
+    """Per-env rollout length so that n_steps * N_ENVS ~ ROLLOUT_EPISODES episodes.
+    With N_ENVS=1 this reduces to 4 * stage_max_steps."""
     return max(1, (ROLLOUT_EPISODES * STAGE_MAX_STEPS[stage_idx]) // N_ENVS)
 
 
@@ -133,7 +115,7 @@ _CSV_FIELDS = [
 class PPOCallback(BaseCallback):
     """One-line terminal output per episode; full reward breakdown logged to CSV."""
 
-    SEP = "─" * 76
+    SEP = "-" * 76
 
     def __init__(self, save_every: int = 100, start_ep: int = 0):
         super().__init__()
@@ -160,12 +142,12 @@ class PPOCallback(BaseCallback):
         print(f"Curriculum: {len(CURRICULUM_STAGES)} stages")
         for i, s in enumerate(CURRICULUM_STAGES):
             n = len(s) if s else N_ITEMS
-            print(f"  Stage {i+1}: {n} items — {s or 'ALL'}")
+            print(f"  Stage {i+1}: {n} items: {s or 'ALL'}")
         if start_ep:
             print(f"Resuming from episode {start_ep}")
         active = CURRICULUM_STAGES[self._stage]
         n_start = len(active) if active else N_ITEMS
-        print(f"\nStarting Stage {self._stage + 1}: {n_start} items — {active or 'ALL'}")
+        print(f"\nStarting Stage {self._stage + 1}: {n_start} items: {active or 'ALL'}")
         print(self.SEP)
         print(f"{'Ep':>5}  {'Reward':>9}  {'Avg50':>9}  {'Balls':>5}  {'Done':>4}  "
               f"{'Seen':>5}  {'Rooms':>5}  {'Steps':>10}  {'Time':>7}  {'Stage':>5}")
@@ -230,7 +212,7 @@ class PPOCallback(BaseCallback):
                 m = {k: np.mean(v[-n:]) for k, v in self._comp_buf.items()}
                 print(self.SEP)
                 print(f"  [ep {self.ep_count}]  stage={stage}  avg50={avg50:+.1f}  "
-                      f"steps={self.num_timesteps}  saved → {path}.zip")
+                      f"steps={self.num_timesteps}  saved to {path}.zip")
                 print(f"  Mean reward breakdown (last {n} eps):")
                 print(f"    expl={m['expl']:+.1f}  guide={m['guide']:+.1f}  "
                       f"delivery={m['delivery']:+.1f}  completion={m['completion']:+.1f}")
@@ -299,11 +281,11 @@ class CurriculumCallback(PPOCallback):
 
         n_new = len(new_active) if new_active else N_ITEMS
         print(f"\n{'='*76}")
-        print(f"  CURRICULUM ADVANCE  →  Stage {self._stage + 1}/{len(CURRICULUM_STAGES)}")
-        print(f"  Items: {n_new}  —  {new_active or 'ALL 8'}")
+        print(f"  CURRICULUM ADVANCE to Stage {self._stage + 1}/{len(CURRICULUM_STAGES)}")
+        print(f"  Items: {n_new}  ({new_active or 'ALL'})")
         print(f"  Max episode steps: {new_maxsteps}")
         print(f"  Ep {self.ep_count}  |  steps {self.num_timesteps}")
-        print(f"  Checkpoint saved → {path}.zip")
+        print(f"  Checkpoint saved to {path}.zip")
         print(f"{'='*76}\n")
 
 

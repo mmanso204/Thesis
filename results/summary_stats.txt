@@ -1,0 +1,32 @@
+Loading logs from: /home/m_p_k_manso/Thesis/train_scripts  (clipped to 20M steps)
+  run1_ont_food_prox5: 6,736 eps, 20.0M steps, stages seen: [1, 2, 3]
+  run2_vanilla_food: 7,912 eps, 20.0M steps, stages seen: [1, 2, 3]
+  run3_ont_food_prox0: 6,680 eps, 20.0M steps, stages seen: [1, 2, 3]
+  run4_ont_trash_prox5: 7,392 eps, 20.0M steps, stages seen: [1, 2, 3]
+
+── Stage transition summary (first step reaching each stage) ──
+Run                                  S1         S2         S3         S4   Total eps   Total steps
+──────────────────────────────────────────────────────────────────────────────────────────────────
+Ont + Shared (run1)                0.0M       4.9M       7.0M          —       6,736    19,984,000
+Vanilla (run2)                     0.0M       9.1M      11.5M          —       7,912    19,984,000
+Ont + Indep (run3)                 0.0M       4.7M       6.8M          —       6,680    19,984,000
+Ont + Trash (run4)                 0.0M       3.9M       9.6M          —       7,392    19,984,000
+
+── Final-100-episode averages ────────────────────────────────
+Run                              Reward   Delivery%   Complete%
+───────────────────────────────────────────────────────────────
+Ont + Shared (run1)               731.0      51.2%       0.0%
+Vanilla (run2)                    666.6      52.2%       0.0%
+Ont + Indep (run3)                752.9      53.8%       0.0%
+Ont + Trash (run4)                752.9      49.2%       0.0%
+
+Saving figures to: /home/m_p_k_manso/Thesis/results/figures/
+  reward_all_runs.pdf / .png
+  delivery_all_runs.pdf / .png
+  completion_all_runs.pdf / .png
+  stage_progression.pdf / .png
+  sq1_ont_vs_vanilla.pdf / .png
+  sq3_shared_vs_independent.pdf / .png
+  sq5_generalisation.pdf / .png
+
+Done. 4 run(s) plotted, 7 figures saved.

@@ -5,7 +5,6 @@ from multigrid.core.world_object import Floor
 
 ontology_path = "/Users/m.manso/Downloads/thesisont_updated-2.owl"
 
-# Pick a goal — this drives what items get placed in the environment
 active_goal = GOALS["collect_trash"]  
 
 env = HouseEnv(
@@ -18,7 +17,7 @@ env = HouseEnv(
 )
 
 a1 = Agent(ontology_path)
-a1.set_goal(active_goal)   # links goal to the agent's ontology
+a1.set_goal(active_goal)   
 obs, info = env.reset()
 
 while True:

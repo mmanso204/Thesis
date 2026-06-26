@@ -105,51 +105,126 @@ PROP_PREVIOUS_GOAL        = "previousGoal"
 PROP_CONFLICTS_WITH       = "conflictsWith"
 
 
+class _AgentKB:
+    """One agent's private knowledge base: its own OWL ABox plus the Python
+    mirrors derived from it (rooms/doors/accessibility/observed items).
+
+    Each agent owns exactly one of these. Nothing is shared across agents
+    except through :meth:`Agent._merge_abox`, which is only called when two
+    agents are within proximity — so an out-of-range agent never sees another
+    agent's axioms or derived knowledge.
+    """
+
+    def __init__(self, tbox_path: str):
+        # Own ABox (TBox is loaded into every agent's ontology, identical).
+        self.ont = Ontology(tbox_path, load=True)
+        # Every ABox axiom this agent has asserted, for proximity merge. The
+        # key set dedups so a merge only transfers axioms the other side lacks.
+        self.axioms:      list = []
+        self.axiom_keys:  set[str] = set()
+
+        self.known_cells:            set[str] = set()
+        self.known_objects:          set[str] = set()
+        self.known_rooms:            set[str] = set()
+        self.known_doors:            set[str] = set()
+        self.known_door_connections: set[str] = set()
+        self.door_rooms:             dict[str, set[str]] = {}
+        self.locked_doors:           set[str] = set()
+
+        self.observed_goal_items:    dict[str, str] = {}
+        self.goal_item_room:         dict[str, str] = {}
+
+        self.access_dirty:           bool = True
+        self.accessibility_cache:    dict[str, set[str]] = {}
+        self.asserted_accessible:    set[tuple[str, str]] = set()
+
+        self.agents_declared:        set[int] = set()
+        self.ont_reachable_cached:   float = 0.5
+
+        self.goal_ind:    OWLNamedIndividual | None = None
+        self.subgoal_inds: dict[str, str] = {}
+        self.goal_applied: bool = False
+
+    def assert_axiom(self, axiom) -> bool:
+        """Add a tracked ABox axiom. Returns True if it was new (so merges and
+        the accessibility cache can react only to genuinely new knowledge)."""
+        key = str(axiom)
+        if key in self.axiom_keys:
+            return False
+        self.axiom_keys.add(key)
+        self.axioms.append(axiom)
+        self.ont.add_axiom(axiom)
+        return True
+
+
 class Agent:
     def __init__(self, common_ontology: str, agent_id: int = 0, verbose: bool = True):
         self.tbox_path = common_ontology
-        self.ontology  = Ontology(common_ontology, load=True)
-        self.Agent_ont = Ontology(common_ontology, load=True)
         self.agent_id  = agent_id
         self.verbose   = verbose
 
-        self._known_cells:            set[str] = set()
-        self._known_objects:          set[str] = set()
-        self._known_rooms:            set[str] = set()
-        self._known_doors:            set[str] = set()
-        self._known_door_connections: set[str] = set()
-        self._door_rooms:             dict[str, set[str]] = {}
-        self._locked_doors:           set[str] = set()
-        self._agent_declared:         dict[int, bool] = {}
+        # One private knowledge base per agent, created lazily on first use.
+        self._kbs: dict[int, _AgentKB] = {}
+
+        # Per-agent *own* state (not shared knowledge): each entry is read back
+        # by its own index, so keeping these global keyed-by-id never leaks.
         self._agent_room:             dict[int, str | None] = {}
         self._known_rooms_by_agent:   dict[int, set[str]] = {}
         self._known_cells_by_agent:   dict[int, set[str]] = {}
-        self._goal_item_room:         dict[str, str] = {}
-        self._goal_item_room_prior:   dict[str, str] = {}
 
-        self._access_dirty:           bool = True
-        self._accessibility_cache:    dict[str, set[str]] = {}
-        self._asserted_accessible:    set[tuple[str, str]] = set()
-
+        # Global game state (intentionally shared: a delivered ball / a visibly
+        # carried item are public events, matching the previous behaviour).
         self._all_delivered:          set[str] = set()
         self._agent_carrying:         dict[int, str | None] = {}
         self._agent_carrying_axioms:  dict[int, object]     = {}
 
-        self._ont_reachable_cached:   float = 0.5
-        self._ep_reasoner_calls:      int   = 0
+        # Goal definition (identical for every cooperating agent).
+        self._goal_item_room_prior:   dict[str, str] = {}
+        self._active_goal: Goal | None = None
 
+        self._ep_reasoner_calls:      int   = 0
         self._reasoner_time_ep:       float = 0.0
         self._reasoner_time_total:    float = 0.0
         self._reasoner_calls_ep:      int   = 0
         self._reasoner_calls_total:   int   = 0
 
-        self._active_goal: Goal | None = None
-        self._goal_ind:    OWLNamedIndividual | None = None
-        self._subgoal_inds: dict[str, str] = {}
-        self._observed_goal_items: dict[str, str] = {}
+    # ── per-agent KB access ────────────────────────────────────────────────
+    def _kb(self, agent_id: int) -> _AgentKB:
+        kb = self._kbs.get(agent_id)
+        if kb is None:
+            kb = _AgentKB(self.tbox_path)
+            self._kbs[agent_id] = kb
+            if self._active_goal is not None:
+                self._apply_goal_to_kb(kb, agent_id)
+        return kb
 
-        self._private_item_room:      dict[int, dict[str, str]] = {}
-        self._private_observed_items: dict[int, dict[str, str]] = {}
+    # Backward-compatible single-agent views (agent 0) for the introspection
+    # helpers and external smoke/eval scripts that predate per-agent KBs.
+    @property
+    def _goal_ind(self):
+        kb = self._kbs.get(self.agent_id)
+        return kb.goal_ind if kb else None
+
+    @property
+    def _subgoal_inds(self) -> dict[str, str]:
+        kb = self._kbs.get(self.agent_id)
+        return kb.subgoal_inds if kb else {}
+
+    @property
+    def _observed_goal_items(self) -> dict[str, str]:
+        kb = self._kbs.get(self.agent_id)
+        return kb.observed_goal_items if kb else {}
+
+    @property
+    def _ont_reachable_cached(self) -> float:
+        kb = self._kbs.get(self.agent_id)
+        return kb.ont_reachable_cached if kb else 0.5
+
+    def all_observed_items(self) -> set[str]:
+        seen: set[str] = set()
+        for kb in self._kbs.values():
+            seen |= set(kb.observed_goal_items)
+        return seen
 
 
     def set_goal(self, goal: "Goal | str"):
@@ -157,49 +232,62 @@ class Agent:
             goal = GOALS[goal]
         self._active_goal = goal
 
-        goal_ind_name = f"{goal.ont_class}_agent{self.agent_id}"
-        self._goal_ind = OWLNamedIndividual(IRI.create(NS, goal_ind_name))
-        self.Agent_ont.add_axiom(OWLDeclarationAxiom(self._goal_ind))
-        self.Agent_ont.add_axiom(OWLClassAssertionAxiom(
-            self._goal_ind, OWLClass(IRI.create(NS, "Goal"))
-        ))
-        self.Agent_ont.add_axiom(OWLClassAssertionAxiom(
-            self._goal_ind, OWLClass(IRI.create(NS, goal.ont_class))
-        ))
+        # The goal-item priors are part of the goal definition, identical for
+        # every cooperating agent, so they live on the shared Agent object.
+        self._goal_item_room_prior = {}
+        for room_name, items in goal.room_items.items():
+            for item in items:
+                self._goal_item_room_prior[item.label] = room_name
 
-        agent_ind = OWLNamedIndividual(IRI.create(NS, f"agent_{self.agent_id}"))
-        self.Agent_ont.add_axiom(OWLDeclarationAxiom(agent_ind))
-        self.Agent_ont.add_axiom(OWLClassAssertionAxiom(
-            agent_ind, OWLClass(IRI.create(NS, "Agent"))
-        ))
-        self.Agent_ont.add_axiom(OWLObjectPropertyAssertionAxiom(
-            agent_ind, OWLObjectProperty(IRI.create(NS, PROP_HAS_GOAL)), self._goal_ind
-        ))
+        # Scaffold the goal into every KB that already exists; KBs created
+        # later get it on demand in _kb().
+        for aid, kb in self._kbs.items():
+            self._apply_goal_to_kb(kb, aid)
 
-        def _add(ax):       self.Agent_ont.add_axiom(ax)
+        if self.verbose:
+            print(f"[Agent {self.agent_id}] Goal set: {goal.ont_class} ({self._active_goal})")
+
+    def _apply_goal_to_kb(self, kb: _AgentKB, aid: int):
+        """Write the active goal's scaffolding (goal / subgoal / expected-item
+        individuals) into one agent's private ABox. Goal and subgoal
+        individuals are agent-suffixed so a later merge keeps them distinct."""
+        if kb.goal_applied or self._active_goal is None:
+            return
+        goal = self._active_goal
+
         def _ind(n):        return OWLNamedIndividual(IRI.create(NS, n))
-        def _decl(i):       _add(OWLDeclarationAxiom(i))
-        def _type(i, c):    _add(OWLClassAssertionAxiom(i, OWLClass(IRI.create(NS, c))))
-        def _rel(s, p, o):  _add(OWLObjectPropertyAssertionAxiom(
+        def _decl(i):       kb.assert_axiom(OWLDeclarationAxiom(i))
+        def _type(i, c):    kb.assert_axiom(OWLClassAssertionAxiom(i, OWLClass(IRI.create(NS, c))))
+        def _rel(s, p, o):  kb.assert_axiom(OWLObjectPropertyAssertionAxiom(
                                 s, OWLObjectProperty(IRI.create(NS, p)), o))
+
+        goal_ind = _ind(f"{goal.ont_class}_agent{aid}")
+        kb.goal_ind = goal_ind
+        _decl(goal_ind)
+        _type(goal_ind, "Goal")
+        _type(goal_ind, goal.ont_class)
+
+        agent_ind = _ind(f"agent_{aid}")
+        _decl(agent_ind)
+        _type(agent_ind, "Agent")
+        _rel(agent_ind, PROP_HAS_GOAL, goal_ind)
+        kb.agents_declared.add(aid)
 
         if goal.target_room:
             room_ind = _ind(goal.target_room)
             _decl(room_ind)
             _type(room_ind, "Room")
-            _rel(self._goal_ind, PROP_HAS_TARGET_ROOM, room_ind)
-            _rel(self._goal_ind, PROP_RESOLVED_ROOM, room_ind)
+            _rel(goal_ind, PROP_HAS_TARGET_ROOM, room_ind)
+            _rel(goal_ind, PROP_RESOLVED_ROOM, room_ind)
 
-        self._subgoal_inds = {}
+        kb.subgoal_inds = {}
         prev_subgoal = None
-        seq_idx = 0
         for room_name, items in goal.room_items.items():
             room_prior = _ind(room_name)
             _decl(room_prior)
             _type(room_prior, "Room")
             for item in items:
-                exp_name = f"expected_{item.label.replace(' ', '_')}"
-                exp_ind  = _ind(exp_name)
+                exp_ind = _ind(f"expected_{item.label.replace(' ', '_')}")
                 _decl(exp_ind)
                 _type(exp_ind, "Item")
                 _type(exp_ind, "GoalObject")
@@ -208,79 +296,59 @@ class Agent:
                     _type(exp_ind, base_cls)
                     _type(exp_ind, spec_cls)
                 _rel(exp_ind, PROP_PROBABLY_IN, room_prior)
-                _rel(self._goal_ind, PROP_HAS_TARGET_OBJ, exp_ind)
-                self._goal_item_room_prior[item.label] = room_name
+                _rel(goal_ind, PROP_HAS_TARGET_OBJ, exp_ind)
 
-                sg_name = f"subgoal_{item.label.replace(' ', '_')}_agent{self.agent_id}"
+                sg_name = f"subgoal_{item.label.replace(' ', '_')}_agent{aid}"
                 sg_ind  = _ind(sg_name)
                 _decl(sg_ind)
                 _type(sg_ind, "Goal")
                 _type(sg_ind, "FindObjectGoal")
-                _rel(self._goal_ind, PROP_HAS_SUBGOAL, sg_ind)
+                _rel(goal_ind, PROP_HAS_SUBGOAL, sg_ind)
                 _rel(sg_ind, PROP_HAS_TARGET_OBJ, exp_ind)
                 _rel(sg_ind, PROP_RESOLVED_ROOM, room_prior)
                 if prev_subgoal is not None:
                     _rel(sg_ind, PROP_PREVIOUS_GOAL, prev_subgoal)
                 prev_subgoal = sg_ind
-                seq_idx += 1
-                self._subgoal_inds[item.label] = sg_name
+                kb.subgoal_inds[item.label] = sg_name
 
-        if self.verbose:
-            print(f"[Agent {self.agent_id}] Goal set → {goal.ont_class} ({self._active_goal})")
+        kb.goal_applied = True
 
 
     def reset(self):
-        self.Agent_ont = Ontology(self.tbox_path, load=True)
-        self._known_cells.clear()
-        self._known_objects.clear()
-        self._known_rooms.clear()
-        self._known_doors.clear()
-        self._known_door_connections.clear()
-        self._door_rooms.clear()
-        self._locked_doors.clear()
-        self._observed_goal_items.clear()
+        self._kbs.clear()
         self._active_goal = None
-        self._goal_ind    = None
-        self._subgoal_inds.clear()
         self._reasoner_time_ep = 0.0
         self._reasoner_calls_ep = 0
-        self._agent_declared.clear()
         self._agent_room.clear()
         self._known_rooms_by_agent.clear()
         self._known_cells_by_agent.clear()
-        self._goal_item_room.clear()
         self._goal_item_room_prior.clear()
-        self._access_dirty = True
-        self._accessibility_cache.clear()
-        self._asserted_accessible.clear()
         self._all_delivered.clear()
         self._agent_carrying.clear()
         self._agent_carrying_axioms.clear()
-        self._ont_reachable_cached = 0.5
         self._ep_reasoner_calls    = 0
-        self._private_item_room.clear()
-        self._private_observed_items.clear()
 
     def mark_item_delivered(self, item_label: str):
-        """Assert isDelivered(item, target_room) in OWL ABox.
-        Python mirror (_all_delivered) is updated separately by the caller.
-        """
+        """Assert isDelivered(item, target_room) into every agent's ABox. A
+        delivered ball is a public game event (it sits in the target room), so
+        every agent's reasoner learns it regardless of proximity."""
         if self._active_goal is None:
             return
         exp_name   = f"expected_{item_label.replace(' ', '_')}"
         item_ind   = OWLNamedIndividual(IRI.create(NS, exp_name))
         target_ind = OWLNamedIndividual(IRI.create(NS, self._active_goal.target_room))
-        self.Agent_ont.add_axiom(OWLObjectPropertyAssertionAxiom(
-            item_ind,
-            OWLObjectProperty(IRI.create(NS, PROP_IS_DELIVERED)),
-            target_ind,
-        ))
-        sg_name = self._subgoal_inds.get(item_label)
-        if sg_name:
-            self.Agent_ont.add_axiom(OWLClassAssertionAxiom(
-                OWLNamedIndividual(IRI.create(NS, sg_name)),
-                OWLClass(IRI.create(NS, "CompletedGoal")),
+        for kb in self._kbs.values():
+            kb.assert_axiom(OWLObjectPropertyAssertionAxiom(
+                item_ind,
+                OWLObjectProperty(IRI.create(NS, PROP_IS_DELIVERED)),
+                target_ind,
             ))
+            sg_name = kb.subgoal_inds.get(item_label)
+            if sg_name:
+                kb.assert_axiom(OWLClassAssertionAxiom(
+                    OWLNamedIndividual(IRI.create(NS, sg_name)),
+                    OWLClass(IRI.create(NS, "CompletedGoal")),
+                ))
 
     def _get_view_exts(self, agent_pos, agent_dir, view_size: int = 7):
         if agent_dir == 0:
@@ -355,6 +423,9 @@ class Agent:
 
 
     def observations_to_ont(self, observations: dict, env: HouseEnv, agent_id: int | None = None):
+        aid = agent_id if agent_id is not None else self.agent_id
+        kb  = self._kb(aid)
+
         def cls(name):
             return OWLClass(IRI.create(NS, name))
         def ind(name):
@@ -363,23 +434,21 @@ class Agent:
             return OWLObjectProperty(IRI.create(NS, name))
 
         def declare(individual):
-            self.Agent_ont.add_axiom(OWLDeclarationAxiom(individual))
+            kb.assert_axiom(OWLDeclarationAxiom(individual))
 
         def assert_class(individual, class_name):
-            self.Agent_ont.add_axiom(OWLClassAssertionAxiom(individual, cls(class_name)))
+            kb.assert_axiom(OWLClassAssertionAxiom(individual, cls(class_name)))
 
         def assert_prop(subject, property_name, obj_individual):
-            self.Agent_ont.add_axiom(OWLObjectPropertyAssertionAxiom(
+            kb.assert_axiom(OWLObjectPropertyAssertionAxiom(
                 subject, prop(property_name), obj_individual
             ))
 
-        aid = agent_id if agent_id is not None else self.agent_id
-
         agent_ind = ind(f"agent_{aid}")
-        if not self._agent_declared.get(aid, False):
+        if aid not in kb.agents_declared:
             declare(agent_ind)
             assert_class(agent_ind, "Agent")
-            self._agent_declared[aid] = True
+            kb.agents_declared.add(aid)
 
         current_room = observations["Current_room"]
         room_ind = None
@@ -387,8 +456,8 @@ class Agent:
         if current_room:
             room_ind = ind(current_room)
 
-            if current_room not in self._known_rooms:
-                self._known_rooms.add(current_room)
+            if current_room not in kb.known_rooms:
+                kb.known_rooms.add(current_room)
                 declare(room_ind)
                 assert_class(room_ind, "Room")
 
@@ -406,7 +475,7 @@ class Agent:
                 self._agent_room[aid] = current_room
 
         for cell_name in observations["Visible_cells"]:
-            self._known_cells.add(cell_name)
+            kb.known_cells.add(cell_name)
             self._known_cells_by_agent.setdefault(aid, set()).add(cell_name)
 
         for obj in observations["Visible_objects"]:
@@ -419,9 +488,9 @@ class Agent:
                 continue
 
             if object_type != "door":
-                if obj_key in self._known_objects:
+                if obj_key in kb.known_objects:
                     continue
-                self._known_objects.add(obj_key)
+                kb.known_objects.add(obj_key)
 
             if object_type == "door":
                 door_label = label
@@ -430,26 +499,26 @@ class Agent:
                 is_locked  = obj.get("is_locked", False)
 
                 if current_room:
-                    self._door_rooms.setdefault(door_name, set()).add(current_room)
-                prev_locked = door_name in self._locked_doors
+                    kb.door_rooms.setdefault(door_name, set()).add(current_room)
+                prev_locked = door_name in kb.locked_doors
                 if is_locked:
-                    self._locked_doors.add(door_name)
+                    kb.locked_doors.add(door_name)
                 else:
-                    self._locked_doors.discard(door_name)
-                if door_name not in self._door_rooms or prev_locked != is_locked:
-                    self._access_dirty = True
+                    kb.locked_doors.discard(door_name)
+                if door_name not in kb.door_rooms or prev_locked != is_locked:
+                    kb.access_dirty = True
 
                 door_individual = ind(door_name)
-                if door_name not in self._known_doors:
-                    self._known_doors.add(door_name)
+                if door_name not in kb.known_doors:
+                    kb.known_doors.add(door_name)
                     declare(door_individual)
                     assert_class(door_individual, "Door")
                     assert_class(door_individual, "LockedDoor" if is_locked else "OpenDoor")
 
                 if current_room and room_ind is not None:
                     conn_key = f"{door_name}|{current_room}"
-                    if conn_key not in self._known_door_connections:
-                        self._known_door_connections.add(conn_key)
+                    if conn_key not in kb.known_door_connections:
+                        kb.known_door_connections.add(conn_key)
                         connects_prop      = PROP_CONNECTS_CLOSED if is_locked else PROP_CONNECTS_OPEN
                         room_connects_prop = PROP_ROOM_CONNECTS_CLOSED if is_locked else PROP_ROOM_CONNECTS_OPEN
                         assert_prop(door_individual, connects_prop, room_ind)
@@ -457,7 +526,7 @@ class Agent:
                         if self.verbose:
                             door_type = "locked" if is_locked else "open"
                             print(f"[Agent {aid}] Door '{door_name}' ({door_type})"
-                                  f" — connects to '{current_room}'")
+                                  f" connects to '{current_room}'")
                 continue
 
             is_goal_item = (label and self._active_goal
@@ -484,23 +553,22 @@ class Agent:
             if is_goal_item:
                 exp_name = f"expected_{label.replace(' ', '_')}"
                 exp_ind  = ind(exp_name)
-                self.Agent_ont.add_axiom(OWLSameIndividualAxiom([item_ind, exp_ind]))
-                self._private_observed_items.setdefault(aid, {})[label] = ind_name
+                kb.assert_axiom(OWLSameIndividualAxiom([item_ind, exp_ind]))
+                kb.observed_goal_items[label] = ind_name
                 if current_room:
-                    self._private_item_room.setdefault(aid, {})[label] = current_room
+                    kb.goal_item_room[label] = current_room
 
-                if self._goal_ind:
-                    assert_prop(self._goal_ind, PROP_HAS_TARGET_OBJ, item_ind)
+                if kb.goal_ind:
+                    assert_prop(kb.goal_ind, PROP_HAS_TARGET_OBJ, item_ind)
 
                 if self.verbose:
-                    print(f"[Agent {aid}] ✓ Goal item observed: '{label}' "
+                    print(f"[Agent {aid}] Goal item observed: '{label}' "
                           f"at ({x},{y}) in room '{current_room}'")
 
 
     @contextmanager
     def _reasoner_timer(self):
-        """Accumulate wall-clock time spent constructing + querying HermiT.
-        Wrap every reasoner-using block so the timing stats stay accurate."""
+        """Accumulate wall-clock time spent building and querying HermiT."""
         t0 = time.perf_counter()
         try:
             yield
@@ -512,7 +580,7 @@ class Agent:
             self._reasoner_calls_total += 1
 
     def reasoner_stats(self) -> dict:
-        """Snapshot of reasoner timing — surfaced to the training logger."""
+        """Snapshot of reasoner timing for the training logger."""
         ce, ct = self._reasoner_calls_ep, self._reasoner_calls_total
         return {
             "reasoner_calls_ep":    ce,
@@ -522,12 +590,13 @@ class Agent:
             "reasoner_time_total":  round(self._reasoner_time_total, 2),
         }
 
-    def _get_reasoner(self):
-        save_path = f"/tmp/agent_{self.agent_id}_{os.getpid()}_abox.owl"
+    def _get_reasoner(self, agent_id: int | None = None):
+        aid = agent_id if agent_id is not None else self.agent_id
+        save_path = f"/tmp/agent_{aid}_{os.getpid()}_abox.owl"
         with open(os.devnull, "w") as _devnull:
             _stdout, sys.stdout = sys.stdout, _devnull
             try:
-                self.Agent_ont.save(path=save_path)
+                self._kb(aid).ont.save(path=save_path)
             finally:
                 sys.stdout = _stdout
         return SyncReasoner(save_path, reasoner="HermiT")
@@ -587,7 +656,7 @@ class Agent:
                 f"Rooms known: {len(rooms_known)} | "
                 f"Items in ABox: {len(items_observed)} | "
                 f"Goal items found: {len(found_labels)}/{total_targets}"
-                + (f" — {found_labels}" if found_labels else "")
+                + (f" {found_labels}" if found_labels else "")
             )
             print(
                 f"[Reasoner | Agent {self.agent_id}] "
@@ -630,8 +699,8 @@ class Agent:
             f"Observed {len(self._observed_goal_items)}/{len(target_items)} | "
             f"Delivered to '{target_room}': {len(delivered)} | "
             f"Still unseen: {len(remaining)}"
-            + (f" — {list(remaining)[:5]}{'…' if len(remaining) > 5 else ''}"
-               if remaining else " — ALL FOUND ✓")
+            + (f" - {list(remaining)[:5]}{'...' if len(remaining) > 5 else ''}"
+               if remaining else " - all found")
         )
 
     @staticmethod
@@ -646,35 +715,43 @@ class Agent:
         return list(adjacent)
 
     def get_goal_items_observed(self) -> list[str]:
-        return list(self._observed_goal_items.keys())
+        return list(self.all_observed_items())
 
     def get_goal_items_remaining(self) -> list[str]:
         if not self._active_goal:
             return []
-        seen = set(self._observed_goal_items.keys())
+        seen = self.all_observed_items()
         return [lbl for lbl in self._active_goal.target_items if lbl not in seen]
 
-    def get_known_rooms(self) -> list[str]:
-        return list(self._known_rooms)
+    def get_known_rooms(self, agent_id: int | None = None) -> list[str]:
+        """Rooms a given agent privately knows. With agent_id=None, the union
+        across all agents (team coverage) — used only for logging."""
+        if agent_id is None:
+            seen: set[str] = set()
+            for kb in self._kbs.values():
+                seen |= kb.known_rooms
+            return list(seen)
+        return list(self._kb(agent_id).known_rooms)
 
-    def _compute_accessible_rooms(self, start_room: str | None) -> set[str]:
+    def _compute_accessible_rooms(self, agent_id: int, start_room: str | None) -> set[str]:
+        kb = self._kb(agent_id)
         if not start_room:
             return set()
-        if not self._access_dirty and start_room in self._accessibility_cache:
-            return self._accessibility_cache[start_room]
+        if not kb.access_dirty and start_room in kb.accessibility_cache:
+            return kb.accessibility_cache[start_room]
 
-        if self._access_dirty:
-            self._accessibility_cache.clear()
-            self._access_dirty = False
-            for door_name, rooms in self._door_rooms.items():
-                if door_name not in self._locked_doors:
+        if kb.access_dirty:
+            kb.accessibility_cache.clear()
+            kb.access_dirty = False
+            for door_name, rooms in kb.door_rooms.items():
+                if door_name not in kb.locked_doors:
                     rooms_list = list(rooms)
                     if len(rooms_list) == 2:
                         a, b = rooms_list
                         for src, dst in [(a, b), (b, a)]:
-                            if (src, dst) not in self._asserted_accessible:
-                                self._asserted_accessible.add((src, dst))
-                                self.Agent_ont.add_axiom(OWLObjectPropertyAssertionAxiom(
+                            if (src, dst) not in kb.asserted_accessible:
+                                kb.asserted_accessible.add((src, dst))
+                                kb.assert_axiom(OWLObjectPropertyAssertionAxiom(
                                     OWLNamedIndividual(IRI.create(NS, src)),
                                     OWLObjectProperty(IRI.create(NS, PROP_ACCESSIBLE_TO)),
                                     OWLNamedIndividual(IRI.create(NS, dst)),
@@ -684,51 +761,55 @@ class Agent:
         queue = [start_room]
         while queue:
             room = queue.pop()
-            for door_name, rooms in self._door_rooms.items():
-                if room in rooms and door_name not in self._locked_doors:
+            for door_name, rooms in kb.door_rooms.items():
+                if room in rooms and door_name not in kb.locked_doors:
                     for neighbour in rooms:
                         if neighbour not in accessible:
                             accessible.add(neighbour)
                             queue.append(neighbour)
-        self._accessibility_cache[start_room] = accessible
+        kb.accessibility_cache[start_room] = accessible
         return accessible
 
     def _check_ont_reachability(self) -> None:
-        if not self._goal_ind:
-            return
-        with self._reasoner_timer():
-            try:
-                reasoner = self._get_reasoner()
-                types = {
-                    t.iri.remainder
-                    for t in reasoner.types(self._goal_ind, direct=False)
-                    if t.iri.namespace == NS
-                }
-                if "ReachableGoal" in types:
-                    self._ont_reachable_cached = 1.0
-                elif "UnreachableGoal" in types:
-                    self._ont_reachable_cached = 0.0
-            except Exception:
-                pass
-        self._ep_reasoner_calls += 1
+        """Recompute each agent's goal reachability from its own private ABox,
+        so an out-of-range agent's reachability reflects only what it knows."""
+        for aid, kb in self._kbs.items():
+            if not kb.goal_ind:
+                continue
+            with self._reasoner_timer():
+                try:
+                    reasoner = self._get_reasoner(aid)
+                    types = {
+                        t.iri.remainder
+                        for t in reasoner.types(kb.goal_ind, direct=False)
+                        if t.iri.namespace == NS
+                    }
+                    if "ReachableGoal" in types:
+                        kb.ont_reachable_cached = 1.0
+                    elif "UnreachableGoal" in types:
+                        kb.ont_reachable_cached = 0.0
+                except Exception:
+                    pass
+            self._ep_reasoner_calls += 1
 
     def assert_goal_conflict(self, item_label: str, other_subgoal_name: str) -> None:
-        """Assert conflictsWith between this agent's subgoal for `item_label` and
-        another agent's subgoal — so HermiT infers CompetingGoal (Q7 diversion).
-        conflictsWith is symmetric in the TBox, so one assertion suffices."""
-        sg_name = self._subgoal_inds.get(item_label)
+        """Assert conflictsWith between this agent's subgoal for item_label and another
+        agent's subgoal, letting HermiT infer CompetingGoal. conflictsWith is symmetric
+        in the TBox, so one assertion suffices."""
+        kb = self._kb(self.agent_id)
+        sg_name = kb.subgoal_inds.get(item_label)
         if not sg_name:
             return
-        self.Agent_ont.add_axiom(OWLObjectPropertyAssertionAxiom(
+        kb.assert_axiom(OWLObjectPropertyAssertionAxiom(
             OWLNamedIndividual(IRI.create(NS, sg_name)),
             OWLObjectProperty(IRI.create(NS, PROP_CONFLICTS_WITH)),
             OWLNamedIndividual(IRI.create(NS, other_subgoal_name)),
         ))
 
     def competency_report(self) -> dict:
-        """Answer the ontology competency questions with a single DL-reasoning
-        pass.  For on-demand evaluation / thesis demonstration — NOT the per-step
-        hot loop (one HermiT build; cost recorded by the reasoner timer)."""
+        """Answer the ontology competency questions in a single DL-reasoning pass.
+        Meant for on-demand evaluation, not the per-step loop (one HermiT build,
+        cost recorded by the reasoner timer)."""
         if not self._goal_ind:
             return {}
         goal_name = self._goal_ind.iri.remainder
@@ -764,33 +845,63 @@ class Agent:
                 return {"error": str(e)}
 
 
-    def _knowledge_diff(self, agent_id: int) -> dict[str, dict]:
-        """Return what agent_id has privately observed that is absent from the shared pool.
+    def set_carrying(self, agent_id: int, label: str | None) -> None:
+        """Record that agent_id is (or is no longer) carrying a goal item, in
+        its own ABox. The cross-agent 'carried by others' feature reads the
+        shared _agent_carrying dict, so this only touches the agent's own ABox."""
+        if self._agent_carrying.get(agent_id) == label:
+            return
+        kb = self._kb(agent_id)
+        prev_ax = self._agent_carrying_axioms.get(agent_id)
+        if prev_ax is not None:
+            try:
+                kb.ont.remove_axiom(prev_ax)
+            except Exception:
+                pass
+            self._agent_carrying_axioms[agent_id] = None
+        if label:
+            a_ind  = OWLNamedIndividual(IRI.create(NS, f"agent_{agent_id}"))
+            it_ind = OWLNamedIndividual(IRI.create(NS, f"expected_{label.replace(' ', '_')}"))
+            axiom  = OWLObjectPropertyAssertionAxiom(
+                a_ind, OWLObjectProperty(IRI.create(NS, PROP_IS_CARRYING)), it_ind)
+            kb.ont.add_axiom(axiom)
+            self._agent_carrying_axioms[agent_id] = axiom
+        self._agent_carrying[agent_id] = label
 
-        owlapy has no built-in ontology-merge API, so we diff the Python-level
-        dicts here and rely on get_abox_axioms() only if a full OWL-level merge
-        is ever needed (see _share_knowledge).
-        """
-        priv_items = self._private_item_room.get(agent_id, {})
-        priv_obs   = self._private_observed_items.get(agent_id, {})
-        return {
-            "item_rooms": {k: v for k, v in priv_items.items() if k not in self._goal_item_room},
-            "observed":   {k: v for k, v in priv_obs.items() if k not in self._observed_goal_items},
-        }
+    def _merge_abox(self, i: int, j: int) -> int:
+        """Real ABox sharing: when agents i and j are within proximity, transfer
+        each one's asserted axioms into the other's ABox (deduped) and union the
+        derived Python knowledge. This is the *only* path by which one agent's
+        knowledge reaches another, so out-of-range agents never leak."""
+        kb_i, kb_j = self._kb(i), self._kb(j)
+        added  = self._copy_kb(kb_i, kb_j)
+        added += self._copy_kb(kb_j, kb_i)
+        return added
 
-    def _share_knowledge(self, agent_id: int) -> int:
-        """Flush agent_id's private observations into the shared pool.
+    @staticmethod
+    def _copy_kb(src: "_AgentKB", dst: "_AgentKB") -> int:
+        """Copy every axiom src holds that dst lacks, plus the derived mirrors."""
+        added = 0
+        for ax in src.axioms:
+            if dst.assert_axiom(ax):
+                added += 1
 
-        For the OWL ABox the axioms were already asserted by observations_to_ont
-        (the shared Agent_ont receives everything); what we gate here are the
-        Python-level dicts that drive state features and guidance rewards.
+        dst.known_cells            |= src.known_cells
+        dst.known_objects          |= src.known_objects
+        dst.known_rooms            |= src.known_rooms
+        dst.known_doors            |= src.known_doors
+        dst.known_door_connections |= src.known_door_connections
+        dst.locked_doors           |= src.locked_doors
+        for door_name, rooms in src.door_rooms.items():
+            dst.door_rooms.setdefault(door_name, set()).update(rooms)
+        for label, ind_name in src.observed_goal_items.items():
+            dst.observed_goal_items.setdefault(label, ind_name)
+        for label, room in src.goal_item_room.items():
+            dst.goal_item_room.setdefault(label, room)
 
-        Returns the number of new facts added to the shared pool.
-        """
-        diff = self._knowledge_diff(agent_id)
-        self._goal_item_room.update(diff["item_rooms"])
-        self._observed_goal_items.update(diff["observed"])
-        return len(diff["item_rooms"]) + len(diff["observed"])
+        if added:
+            dst.access_dirty = True
+        return added
 
 
 def cls_q(name: str, ns: str) -> OWLClass:
@@ -812,25 +923,6 @@ _ENV_KEYS = ["front door key", "garden gate key"]
 
 
 class DQNAgent(Agent):
-    """
-    State vector layout
-    -------------------
-      [0:147]        flattened 7x7x3 partial-obs image  (÷10 normalised)
-      [147:151]      agent direction one-hot (4)
-      [151:161]      current room one-hot    (10)
-      [161:171]      known rooms binary      (10)
-      [171:171+N]    goal items observed binary (N = len goal.target_items)
-      [171+N:181+N]  target room one-hot     (10)
-      [181+N:191+N]  goal items per room     (10)
-      [191+N:201+N]  accessible rooms binary (10)
-      [201+N:201+2N]  items carried by other agents (N)
-      [201+2N]        keys progress           0..1
-      [202+2N]        balls progress          0..1
-      [203+2N]        carrying flag           0 or 1
-      [204+2N]        goal room reachable     0 or 1
-      [205+2N]        unreachable items frac  0..1
-      [206+2N]        ont goal reachable      0/0.5/1
-    """
 
     N_ACTIONS = 7
 
@@ -879,8 +971,9 @@ class DQNAgent(Agent):
         self.total_steps = 0
 
     def _ont_features(self, current_room, keys_c, balls_d, carrying, agent_id: int = 0) -> np.ndarray:
-        known     = set(self.get_known_rooms())
-        observed  = set(self._observed_goal_items) | set(self._private_observed_items.get(agent_id, {}))
+        kb        = self._kb(agent_id)
+        known     = set(kb.known_rooms)
+        observed  = set(kb.observed_goal_items)
         delivered = self._all_delivered
 
         current_oh    = [float(r == current_room) for r in _ROOMS]
@@ -897,7 +990,7 @@ class DQNAgent(Agent):
             for room in _ROOMS
         ]
 
-        accessible     = self._compute_accessible_rooms(current_room)
+        accessible     = self._compute_accessible_rooms(agent_id, current_room)
         accessible_bin = [float(r in accessible) for r in _ROOMS]
         goal_reachable = float(self.goal.target_room in accessible)
         unreachable_items = sum(
@@ -919,7 +1012,7 @@ class DQNAgent(Agent):
             float(carrying),
             goal_reachable,
             unreachable_items,
-            self._ont_reachable_cached,
+            kb.ont_reachable_cached,
         ]
         return np.array(
             current_oh + known_bin + items_bin + target_oh
@@ -976,7 +1069,6 @@ class DQNAgent(Agent):
     def run_episode(self, env, render: bool = False) -> dict:
         self.reset()
         self.set_goal(self.goal)
-        self._check_ont_reachability()
 
         obs_dict, info = env.reset()
         n_agents = len(env.agents)
@@ -988,23 +1080,30 @@ class DQNAgent(Agent):
             self._agent_carrying[i]        = None
             self._agent_carrying_axioms[i] = None
 
-        agent_states = []
+        # Assert each agent's first observations into its own ABox, then merge
+        # any in-proximity pairs, then run reachability per agent — so the very
+        # first state vector reflects each agent's private (possibly merged) KB.
+        obs_cache = {}
         for i in range(n_agents):
             pos      = env.agents[i].state.pos
             obs_data = self.observations(obs_dict[i], pos, env, agent_id=i)
             self.observations_to_ont(obs_data, env, agent_id=i)
-            keys_c   = info[i].get("agent_keys_collected", [])
-            balls_d  = info[i].get("agent_balls_delivered", [])
-            carrying = getattr(env.agents[i].state, "carrying", None) is not None
-            agent_states.append(self.get_state(obs_dict[i], obs_data["Current_room"], keys_c, balls_d, carrying, agent_id=i))
+            obs_cache[i] = obs_data
         if self.proximity_threshold > 0:
             for _i in range(n_agents):
                 for _j in range(_i + 1, n_agents):
                     pi = env.agents[_i].state.pos
                     pj = env.agents[_j].state.pos
                     if abs(pi[0] - pj[0]) + abs(pi[1] - pj[1]) <= self.proximity_threshold:
-                        self._share_knowledge(_i)
-                        self._share_knowledge(_j)
+                        self._merge_abox(_i, _j)
+        self._check_ont_reachability()
+
+        agent_states = []
+        for i in range(n_agents):
+            keys_c   = info[i].get("agent_keys_collected", [])
+            balls_d  = info[i].get("agent_balls_delivered", [])
+            carrying = getattr(env.agents[i].state, "carrying", None) is not None
+            agent_states.append(self.get_state(obs_dict[i], obs_cache[i]["Current_room"], keys_c, balls_d, carrying, agent_id=i))
 
         total_reward   = 0.0
         loss_sum       = 0.0
@@ -1042,9 +1141,7 @@ class DQNAgent(Agent):
             prev_balls_by_agent    = {i: set(env._balls_delivered.get(i, []))            for i in range(n_agents)}
             prev_keys_by_agent     = {i: set(ep_key_collected[i])                        for i in range(n_agents)}
             prev_all_delivered     = set().union(*prev_balls_by_agent.values())
-            prev_observed          = set(self._observed_goal_items)
-            for _pid in range(n_agents):
-                prev_observed.update(self._private_observed_items.get(_pid, {}))
+            prev_observed          = self.all_observed_items()
 
             obs_next, rewards, terminations, truncations, infos = env.step(actions)
             done = bool(terminations[0]) or bool(truncations[0])
@@ -1065,10 +1162,7 @@ class DQNAgent(Agent):
                         pi = env.agents[_i].state.pos
                         pj = env.agents[_j].state.pos
                         if abs(pi[0] - pj[0]) + abs(pi[1] - pj[1]) <= self.proximity_threshold:
-                            self._share_knowledge(_i)
-                            self._share_knowledge(_j)
-            else:
-                pass
+                            self._merge_abox(_i, _j)
 
             self._all_delivered = set().union(
                 *(set(infos[i].get("agent_balls_delivered", [])) for i in range(n_agents))
@@ -1078,28 +1172,12 @@ class DQNAgent(Agent):
                 now_c  = getattr(env.agents[i].state, "carrying", None)
                 g_lbl  = getattr(now_c, "label", None)
                 g_lbl  = g_lbl if (g_lbl and g_lbl in self.goal.target_items) else None
-                if self._agent_carrying.get(i) != g_lbl:
-                    if self._agent_carrying_axioms.get(i) is not None:
-                        try:
-                            self.Agent_ont.remove_axiom(self._agent_carrying_axioms[i])
-                        except Exception:
-                            pass
-                        self._agent_carrying_axioms[i] = None
-                    if g_lbl:
-                        a_ind  = OWLNamedIndividual(IRI.create(NS, f"agent_{i}"))
-                        it_ind = OWLNamedIndividual(IRI.create(NS, f"expected_{g_lbl.replace(' ', '_')}"))
-                        axiom  = OWLObjectPropertyAssertionAxiom(
-                            a_ind, OWLObjectProperty(IRI.create(NS, PROP_IS_CARRYING)), it_ind)
-                        self.Agent_ont.add_axiom(axiom)
-                        self._agent_carrying_axioms[i] = axiom
-                    self._agent_carrying[i] = g_lbl
+                self.set_carrying(i, g_lbl)
 
             for i in range(n_agents):
                 ep_key_collected[i] = set(infos[i].get("agent_keys_collected", []))
 
-            now_observed = set(self._observed_goal_items)
-            for _pid in range(n_agents):
-                now_observed.update(self._private_observed_items.get(_pid, {}))
+            now_observed  = self.all_observed_items()
             newly_seen    = now_observed - prev_observed
             prev_observed = now_observed
 
@@ -1107,8 +1185,9 @@ class DQNAgent(Agent):
             for i in range(n_agents):
                 s = 0.0
                 _time = 0.0
-                _eff_item_room_i = {**self._goal_item_room, **self._private_item_room.get(i, {})}
-                _eff_observed_i  = set(self._observed_goal_items) | set(self._private_observed_items.get(i, {}))
+                _kb_i            = self._kb(i)
+                _eff_item_room_i = dict(_kb_i.goal_item_room)
+                _eff_observed_i  = set(_kb_i.observed_goal_items)
 
                 new_rooms = self._known_rooms_by_agent.get(i, set()) - prev_rooms_by_agent[i]
                 _expl = 3.0 * len(new_rooms)
@@ -1277,18 +1356,12 @@ class DQNAgent(Agent):
             "keys_pooled":             keys_pooled,
             "balls_delivered":         len(infos[0].get("all_balls_delivered", [])),
             "rooms_explored":          len(self.get_known_rooms()),
-            "items_observed":          len(
-                set(self._observed_goal_items)
-                | set().union(*[set(d) for d in self._private_observed_items.values()])
-            ),
+            "items_observed":          len(self.all_observed_items()),
             "items_total":             len(self.goal.target_items),
-            "ont_goal_items":          list(
-                set(self._observed_goal_items)
-                | set().union(*[set(d) for d in self._private_observed_items.values()])
-            ),
+            "ont_goal_items":          list(self.all_observed_items()),
             "ont_rooms":               self.get_known_rooms(),
             "target_room":             self.goal.target_room,
-            "target_room_visited":     self.goal.target_room in self._known_rooms,
+            "target_room_visited":     self.goal.target_room in self.get_known_rooms(),
             "ont_goal_class":          self.goal.ont_class,
             "ont_reward_total":        ont_reward_sum,
             "ont_reachable":           self._ont_reachable_cached,

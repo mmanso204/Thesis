@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.patches import Patch
 
-# ── Run definitions — must match run_experiments.sh ────────────────────────────
+# Run definitions: must match run_experiments.sh
 RUNS_META = [
     dict(name="run1_ont_food_prox5",  label="Ont + Shared (run1)",  color="#1f77b4", ls="-",   goal="collect_food"),
     dict(name="run2_vanilla_food",     label="Vanilla (run2)",        color="#ff7f0e", ls="--",  goal="collect_food"),
@@ -47,8 +47,7 @@ _DEFAULT_OUT_DIR   = Path("results/figures")
 _DEFAULT_SMOOTH    = 200
 
 
-# ── Data loading ───────────────────────────────────────────────────────────────
-
+# Data loading
 def load_run(ckpt_root: Path, run_name: str, max_steps: int | None = None) -> pd.DataFrame | None:
     csv_path = ckpt_root / f"checkpoints_{run_name}" / "training_log.csv"
     if not csv_path.exists():
@@ -71,8 +70,7 @@ def stage_first_steps(df: pd.DataFrame) -> dict[int, int]:
     return out
 
 
-# ── Smoothing ──────────────────────────────────────────────────────────────────
-
+# Smoothing
 def smooth(series: pd.Series, win: int) -> pd.Series:
     return series.rolling(win, min_periods=1, center=True).mean()
 
@@ -83,8 +81,7 @@ def delivery_frac(df: pd.DataFrame, goal: str, win: int) -> pd.Series:
     return smooth(df["balls"] / n_active, win)
 
 
-# ── Figure helpers ─────────────────────────────────────────────────────────────
-
+# Figure helpers
 def _save(fig: plt.Figure, out_dir: Path, stem: str) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     for ext in ("pdf", "png"):
@@ -105,8 +102,7 @@ def _apply_defaults(ax: plt.Axes, title: str, xlabel: str, ylabel: str,
         ax.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
 
 
-# ── Individual figures ─────────────────────────────────────────────────────────
-
+# Individual figures
 def fig_reward_all(run_data: list[dict], out_dir: Path, win: int) -> None:
     fig, ax = plt.subplots(figsize=(9, 5))
     for rd in run_data:
@@ -114,7 +110,7 @@ def fig_reward_all(run_data: list[dict], out_dir: Path, win: int) -> None:
         s = smooth(rd["df"]["avg50"], win)
         ax.plot(rd["df"]["steps"] / 1e6, s, label=m["label"],
                 color=m["color"], linestyle=m["ls"], lw=1.8)
-    _apply_defaults(ax, "Training reward — all runs",
+    _apply_defaults(ax, "Training reward: all runs",
                     "Environment steps (M)", f"Avg-50 reward (smoothed, win={win})")
     fig.tight_layout()
     _save(fig, out_dir, "reward_all_runs")
@@ -131,7 +127,7 @@ def fig_delivery_all(run_data: list[dict], out_dir: Path, win: int) -> None:
         frac = delivery_frac(rd["df"], "collect_food", win)
         axes[0].plot(rd["df"]["steps"] / 1e6, frac, label=m["label"],
                      color=m["color"], linestyle=m["ls"], lw=1.8)
-    _apply_defaults(axes[0], "Delivery fraction — collect_food",
+    _apply_defaults(axes[0], "Delivery fraction: collect_food",
                     "Steps (M)", "Delivered / active items", pct_y=True)
 
     for rd in trash_runs:
@@ -139,7 +135,7 @@ def fig_delivery_all(run_data: list[dict], out_dir: Path, win: int) -> None:
         frac = delivery_frac(rd["df"], "collect_trash", win)
         axes[1].plot(rd["df"]["steps"] / 1e6, frac, label=m["label"],
                      color=m["color"], linestyle=m["ls"], lw=1.8)
-    _apply_defaults(axes[1], "Delivery fraction — collect_trash (SQ5)",
+    _apply_defaults(axes[1], "Delivery fraction: collect_trash (SQ5)",
                     "Steps (M)", "Delivered / active items", pct_y=True)
 
     fig.tight_layout()
@@ -153,7 +149,7 @@ def fig_completion_all(run_data: list[dict], out_dir: Path, win: int) -> None:
         rate = smooth(rd["df"]["done"].astype(float), win)
         ax.plot(rd["df"]["steps"] / 1e6, rate, label=m["label"],
                 color=m["color"], linestyle=m["ls"], lw=1.8)
-    _apply_defaults(ax, "Episode completion rate — all runs",
+    _apply_defaults(ax, "Episode completion rate: all runs",
                     "Steps (M)", f"Completion rate (rolling {win}-ep)", pct_y=True)
     fig.tight_layout()
     _save(fig, out_dir, "completion_all_runs")
@@ -189,6 +185,69 @@ def fig_stage_progression(run_data: list[dict], out_dir: Path) -> None:
     _save(fig, out_dir, "stage_progression")
 
 
+def fig_overview_combined(run_data: list[dict], out_dir: Path, win: int) -> None:
+    """Stack the three all-run line charts (reward, delivery, completion) and the
+    curriculum stage progression into a single shared-x figure."""
+    fig, axes = plt.subplots(
+        4, 1, figsize=(10, 13), sharex=True,
+        gridspec_kw=dict(height_ratios=[3, 3, 3, 2], hspace=0.18),
+    )
+    ax_r, ax_d, ax_c, ax_s = axes
+
+    # Panel 1: reward
+    for rd in run_data:
+        m = rd["meta"]
+        ax_r.plot(rd["df"]["steps"] / 1e6, smooth(rd["df"]["avg50"], win),
+                  label=m["label"], color=m["color"], linestyle=m["ls"], lw=1.8)
+    ax_r.set_title("Training overview: all runs")
+    ax_r.set_ylabel(f"Avg-50 reward\n(smoothed, win={win})")
+    ax_r.legend(fontsize=8, ncol=2)
+    ax_r.grid(True, alpha=0.3)
+
+    # Panel 2: delivery fraction (each run uses its own goal's stage map)
+    for rd in run_data:
+        m = rd["meta"]
+        ax_d.plot(rd["df"]["steps"] / 1e6, delivery_frac(rd["df"], m["goal"], win),
+                  label=m["label"], color=m["color"], linestyle=m["ls"], lw=1.8)
+    ax_d.set_ylabel("Delivered /\nactive items")
+    ax_d.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
+    ax_d.grid(True, alpha=0.3)
+
+    # Panel 3: completion rate
+    for rd in run_data:
+        m = rd["meta"]
+        ax_c.plot(rd["df"]["steps"] / 1e6, smooth(rd["df"]["done"].astype(float), win),
+                  label=m["label"], color=m["color"], linestyle=m["ls"], lw=1.8)
+    ax_c.set_ylabel(f"Completion rate\n(rolling {win}-ep)")
+    ax_c.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
+    ax_c.grid(True, alpha=0.3)
+
+    # Panel 4: curriculum stage progression
+    stage_colors = ["#aec7e8", "#ffbb78", "#98df8a", "#ff9896"]
+    stage_labels = ["Stage 1 (1 item)", "Stage 2 (2 items)",
+                    "Stage 3 (4 items)", "Stage 4 (all items)"]
+    bar_h = 0.5
+    for yi, rd in enumerate(run_data):
+        df = rd["df"]
+        trans = stage_first_steps(df)
+        max_step = df["steps"].max()
+        stages = sorted(trans.keys())
+        for i, stage in enumerate(stages):
+            start = trans[stage]
+            end = trans[stages[i + 1]] if i + 1 < len(stages) else max_step
+            ax_s.barh(yi, (end - start) / 1e6, left=start / 1e6, height=bar_h,
+                      color=stage_colors[stage - 1], edgecolor="white", lw=0.5)
+    ax_s.set_yticks(range(len(run_data)))
+    ax_s.set_yticklabels([rd["meta"]["label"] for rd in run_data])
+    ax_s.set_ylabel("Curriculum\nstage")
+    ax_s.set_xlabel("Environment steps (M)")
+    ax_s.legend(handles=[Patch(facecolor=stage_colors[i], label=stage_labels[i])
+                         for i in range(4)], loc="lower right", fontsize=8, ncol=2)
+    ax_s.grid(True, axis="x", alpha=0.3)
+
+    _save(fig, out_dir, "overview_combined")
+
+
 def fig_sq1(run_data: list[dict], out_dir: Path, win: int) -> None:
     targets = {"run1_ont_food_prox5", "run2_vanilla_food"}
     sq1 = [rd for rd in run_data if rd["meta"]["name"] in targets]
@@ -205,8 +264,8 @@ def fig_sq1(run_data: list[dict], out_dir: Path, win: int) -> None:
         axes[1].plot(df["steps"] / 1e6, delivery_frac(df, "collect_food", win),
                      label=m["label"], color=m["color"], linestyle=m["ls"], lw=2)
 
-    _apply_defaults(axes[0], "SQ1 — Reward", "Steps (M)", "Avg-50 reward")
-    _apply_defaults(axes[1], "SQ1 — Delivery fraction", "Steps (M)",
+    _apply_defaults(axes[0], "SQ1: Reward", "Steps (M)", "Avg-50 reward")
+    _apply_defaults(axes[1], "SQ1: Delivery fraction", "Steps (M)",
                     "Delivered / active items", pct_y=True)
     fig.suptitle("SQ1: Ontology-Guided vs Vanilla Baseline (collect_food)",
                  fontweight="bold")
@@ -230,8 +289,8 @@ def fig_sq3(run_data: list[dict], out_dir: Path, win: int) -> None:
         axes[1].plot(df["steps"] / 1e6, delivery_frac(df, "collect_food", win),
                      label=m["label"], color=m["color"], linestyle=m["ls"], lw=2)
 
-    _apply_defaults(axes[0], "SQ3 — Reward", "Steps (M)", "Avg-50 reward")
-    _apply_defaults(axes[1], "SQ3 — Delivery fraction", "Steps (M)",
+    _apply_defaults(axes[0], "SQ3: Reward", "Steps (M)", "Avg-50 reward")
+    _apply_defaults(axes[1], "SQ3: Delivery fraction", "Steps (M)",
                     "Delivered / active items", pct_y=True)
     fig.suptitle("SQ3: Shared ABox (prox=5) vs Independent ABox (prox=0)",
                  fontweight="bold")
@@ -256,40 +315,39 @@ def fig_sq5(run_data: list[dict], out_dir: Path, win: int) -> None:
         axes[1].plot(df["steps"] / 1e6, frac,
                      label=m["label"], color=m["color"], linestyle=m["ls"], lw=2)
 
-    _apply_defaults(axes[0], "SQ5 — Reward", "Steps (M)", "Avg-50 reward")
-    _apply_defaults(axes[1], "SQ5 — Delivery fraction", "Steps (M)",
+    _apply_defaults(axes[0], "SQ5: Reward", "Steps (M)", "Avg-50 reward")
+    _apply_defaults(axes[1], "SQ5: Delivery fraction", "Steps (M)",
                     "Delivered / active items", pct_y=True)
     axes[1].annotate("Note: tasks differ\n(food vs trash)",
                      xy=(0.02, 0.95), xycoords="axes fraction",
                      fontsize=8, va="top", color="grey")
-    fig.suptitle("SQ5: Framework Generalisation — Food vs Trash",
+    fig.suptitle("SQ5: Framework Generalisation, Food vs Trash",
                  fontweight="bold")
     fig.tight_layout()
     _save(fig, out_dir, "sq5_generalisation")
 
 
-# ── Summary table ──────────────────────────────────────────────────────────────
-
+# Summary table
 def print_summary(run_data: list[dict]) -> None:
-    print("\n── Stage transition summary (first step reaching each stage) ──")
+    print("\nStage transition summary (first step reaching each stage)")
     col = 28
     header = f"{'Run':<{col}} {'S1':>10} {'S2':>10} {'S3':>10} {'S4':>10}  {'Total eps':>10}  {'Total steps':>12}"
     print(header)
-    print("─" * len(header))
+    print("-" * len(header))
     for rd in run_data:
         df, meta = rd["df"], rd["meta"]
         t = stage_first_steps(df)
         row = f"{meta['label']:<{col}}"
         for s in [1, 2, 3, 4]:
             v = t.get(s)
-            row += f" {(f'{v/1e6:.1f}M' if v is not None else '—'):>10}"
+            row += f" {(f'{v/1e6:.1f}M' if v is not None else '-'):>10}"
         row += f"  {len(df):>10,}  {df['steps'].max():>12,}"
         print(row)
 
-    print("\n── Final-100-episode averages ────────────────────────────────")
+    print("\nFinal-100-episode averages")
     header2 = f"{'Run':<{col}} {'Reward':>10} {'Delivery%':>11} {'Complete%':>11}"
     print(header2)
-    print("─" * len(header2))
+    print("-" * len(header2))
     for rd in run_data:
         df, meta = rd["df"], rd["meta"]
         tail = df.tail(100)
@@ -302,8 +360,7 @@ def print_summary(run_data: list[dict]) -> None:
     print()
 
 
-# ── Entry point ────────────────────────────────────────────────────────────────
-
+# Entry point
 def parse_args():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -345,11 +402,12 @@ def main():
     fig_delivery_all(run_data, args.out_dir, args.smooth)
     fig_completion_all(run_data, args.out_dir, args.smooth)
     fig_stage_progression(run_data, args.out_dir)
+    fig_overview_combined(run_data, args.out_dir, args.smooth)
     fig_sq1(run_data, args.out_dir, args.smooth)
     fig_sq3(run_data, args.out_dir, args.smooth)
     fig_sq5(run_data, args.out_dir, args.smooth)
 
-    print(f"\nDone. {len(run_data)} run(s) plotted, 7 figures saved.")
+    print(f"\nDone. {len(run_data)} run(s) plotted, 8 figures saved.")
 
 
 if __name__ == "__main__":

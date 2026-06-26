@@ -1,11 +1,11 @@
-"""MAPPO policy for 3-agent cooperative PPO with parameter sharing.
+"""MAPPO policy for cooperative PPO with parameter sharing.
 
-Decentralized actor : shared MLP + shared action head applied independently
-                      to each agent's local obs → 7 logits each.
-Centralized critic  : full concatenated global obs → single value estimate.
+Decentralized actor: shared MLP + shared action head applied independently to
+each agent's local obs, giving 7 logits each.
+Centralized critic: full concatenated global obs to a single value estimate.
 
-Each agent's action depends ONLY on its own observation (true MAPPO).
-Drop-in replacement for "MlpPolicy" — no environment changes required.
+Each agent's action depends only on its own observation (true MAPPO).
+Used in place of "MlpPolicy" with no environment changes required.
 """
 from __future__ import annotations
 
@@ -27,11 +27,11 @@ class MAPPOExtractor(nn.Module):
     Shared-weight actor applied per-agent + centralized critic.
 
     The observation layout is:
-        [agent_0_obs | agent_1_obs | agent_2_obs | global_state]
-         <-- N_AGENTS * agent_obs_dim ----------> <-- n_global ->
+        [agent_0_obs | ... | agent_{N-1}_obs | global_state]
+         <-- N_AGENTS * agent_obs_dim -----> <-- n_global ->
 
     Actor  : receives only each agent's own slice (decentralized execution).
-    Critic : receives the FULL observation including global state (centralized).
+    Critic : receives the full observation including global state (centralized).
 
     forward_actor returns (b, N_AGENTS * N_ACTIONS)
     forward_critic returns (b, latent_vf)
@@ -60,7 +60,7 @@ class MAPPOExtractor(nn.Module):
             in_dim = h
         self.actor_mlp  = nn.Sequential(*layers)
         self.action_head = nn.Linear(in_dim, N_ACTIONS)
-        self.latent_dim_pi = N_AGENTS * N_ACTIONS   # 21
+        self.latent_dim_pi = N_AGENTS * N_ACTIONS
 
         # Centralized critic sees full obs (actor obs + global state)
         layers = []
@@ -76,8 +76,8 @@ class MAPPOExtractor(nn.Module):
 
     def forward_actor(self, features: th.Tensor) -> th.Tensor:
         b = features.shape[0]
-        # Strip global state — actor sees only the per-agent portions
-        actor_feats = features[:, :self._actor_total]                 # (b, 3*agent_obs)
+        # Strip global state; actor sees only the per-agent portions
+        actor_feats = features[:, :self._actor_total]                 # (b, N_AGENTS*agent_obs)
         obs_split   = actor_feats.reshape(b, N_AGENTS, self._agent_obs)
         flat        = obs_split.reshape(b * N_AGENTS, self._agent_obs)
         latent      = self.actor_mlp(flat)
@@ -85,7 +85,7 @@ class MAPPOExtractor(nn.Module):
         return logits.reshape(b, N_AGENTS * N_ACTIONS)
 
     def forward_critic(self, features: th.Tensor) -> th.Tensor:
-        # Full observation including global state → better value estimates
+        # Full observation including global state for better value estimates
         return self.critic_mlp(features)
 
 
@@ -126,8 +126,8 @@ class MAPPOPolicy(ActorCriticPolicy):
 
     def _build(self, lr_schedule: Schedule) -> None:
         super()._build(lr_schedule)
-        # Replace SB3's auto-built action_net (Linear(21,21)) with Identity —
-        # the extractor already outputs the correct logits directly.
+        # Replace SB3's auto-built action_net with Identity; the extractor
+        # already outputs the correct logits directly.
         self.action_net = nn.Identity()
 
     def get_per_agent_log_probs(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:

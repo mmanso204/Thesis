@@ -50,7 +50,7 @@ def nearest_checkpoint(ckpt_dir: str, target: int):
     vec_path = os.path.join(ckpt_dir, fname + "_vecnorm.pkl")
     exists = " (on disk)" if os.path.isfile(zip_path) else " (MISSING on disk!)"
     return (
-        f"  ep={ep}  stage={stage}  steps={steps:,}  (|Δ|={best[0]:,})\n"
+        f"  ep={ep}  stage={stage}  steps={steps:,}  (diff={best[0]:,})\n"
         f"    zip    : {zip_path}{exists}\n"
         f"    vecnorm: {vec_path}",
         None,

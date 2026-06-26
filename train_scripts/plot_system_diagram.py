@@ -24,7 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Rectangle
 
-# ── palette ──────────────────────────────────────────────────────────────────
+# palette
 C_ENV   = "#dbe9f6"   # environment
 C_REAS  = "#e7f4e4"   # reasoning layer
 C_INJ   = "#fdf0d5"   # injection points
@@ -63,7 +63,7 @@ def main():
     ax.set_ylim(0, 8)
     ax.axis("off")
 
-    # ── ontology-layer enclosure (drawn first, behind boxes) ─────────────────
+    # ontology-layer enclosure (drawn first, behind boxes)
     ax.add_patch(Rectangle((3.55, 1.75), 7.1, 4.7, fill=False,
                            linewidth=1.6, edgecolor=ONT, linestyle=(0, (6, 4)),
                            zorder=0))
@@ -71,14 +71,15 @@ def main():
             ha="center", va="bottom", fontsize=9.5, color=ONT,
             fontweight="bold")
 
-    # ── boxes ────────────────────────────────────────────────────────────────
-    box(ax, 1.6, 4.1, 2.4, 1.5, "Environment\n(MultiGrid)", C_ENV, bold=True)
+    # boxes
+    box(ax, 1.6, 4.1, 2.4, 1.6, "Environment\n(MultiGrid)\n+ TBox (schema)", C_ENV,
+        bold=True, fontsize=10)
 
     # reasoning layer with internal pipeline text
     box(ax, 6.0, 4.1, 3.4, 3.2, "", C_REAS)
     ax.text(6.0, 5.55, "Reasoning layer", ha="center", va="center",
             fontsize=11, fontweight="bold", zorder=3)
-    for cy, txt in [(4.55, "ABox  +  TBox"),
+    for cy, txt in [(4.55, "ABox (from obs)  +  TBox (from env)"),
                     (3.65, "OWL reasoner"),
                     (2.75, "derived facts")]:
         ax.text(6.0, cy, txt, ha="center", va="center", fontsize=9.5, zorder=3)
@@ -90,8 +91,11 @@ def main():
 
     box(ax, 13.2, 4.1, 2.4, 1.6, "MAPPO\n(actor + critic)", C_LEARN, bold=True)
 
-    # ── arrows ───────────────────────────────────────────────────────────────
-    arrow(ax, (2.8, 4.1), (4.3, 4.1), "observation\n(field of view)", (3.55, 5.0))
+    # arrows
+    # two inputs from the environment: per-step observation builds the ABox,
+    # while the (static) TBox schema is also supplied by the environment.
+    arrow(ax, (2.8, 4.45), (4.3, 4.75), "observation\n(field of view)", (3.55, 5.15), fs=8)
+    arrow(ax, (2.8, 3.75), (4.3, 4.35), "TBox\n(domain schema)", (3.55, 3.25), fs=8)
     arrow(ax, (7.0, 4.6), (8.35, 5.25))
     arrow(ax, (7.0, 3.6), (8.35, 2.95))
     arrow(ax, (10.85, 5.25), (12.1, 4.55), "augmented obs.", (11.9, 5.25), fs=8)

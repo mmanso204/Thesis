@@ -5,7 +5,7 @@ Run on a machine with a working JVM (HermiT needs Java):
 
 Validates:
   1. HermiT actually runs inside the env step (no JVM/owlapy crash)
-  2. Real reasoner cost  → ms/call  (decides whether per-room-change is affordable)
+  2. Real reasoner cost in ms/call (decides whether per-room-change is affordable)
   3. The ontology answers the 8 competency questions via DL reasoning
 """
 import os, sys, time
@@ -35,7 +35,7 @@ for _ in range(N_STEPS):
 wall = time.perf_counter() - t0
 
 stats = env._ont.reasoner_stats()
-print("\n── reasoner timing ──────────────────────────────")
+print("\nreasoner timing")
 print(f"  wall time for {N_STEPS} steps : {wall:.1f}s")
 print(f"  reasoner calls (this ep)     : {stats['reasoner_calls_ep']}")
 print(f"  reasoner time (this ep)      : {stats['reasoner_time_ep']:.2f}s "
@@ -43,7 +43,7 @@ print(f"  reasoner time (this ep)      : {stats['reasoner_time_ep']:.2f}s "
 print(f"  ms per reasoner call         : {stats['reasoner_ms_per_call']:.1f}")
 print(f"  reachability value changes   : {reach_changes}")
 
-print("\n── competency questions (DL reasoning) ──────────")
+print("\ncompetency questions (DL reasoning)")
 report = env._ont.competency_report()
 for k in sorted(report):
     print(f"  {k:18s}: {report[k]}")

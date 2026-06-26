@@ -147,7 +147,11 @@ class HouseEnv(MultiGridEnv):
             if floor_color == "yellow":
                 label = getattr(carried, "label", None)
                 if label and label not in self._balls_delivered.get(agent_id, []):
-                    pending_ball_delivery[agent_id] = (label, int(ax), int(ay))
+                    # The dropped ball lands in the cell in front of the agent
+                    # (multigrid drop -> front_pos), not the agent's own cell, so
+                    # record that cell for post-step cleanup.
+                    fx, fy = agent.front_pos
+                    pending_ball_delivery[agent_id] = (label, int(fx), int(fy))
 
         obs, rewards, terminations, truncations, infos = super().step(actions)
 
@@ -300,16 +304,52 @@ class HouseEnv(MultiGridEnv):
 
 
     def _place_goal_items(self):
-        """Place collectible items defined by the active goal."""
+        """Place collectible items defined by the active goal.
+
+        Each item spawns on a random empty floor tile inside its room (falling
+        back to the goal-specified tile) so the layout varies between episodes
+        instead of always using the same cell.
+        """
         if not self._goal:
             return
         for room_name, items in self._goal.room_items.items():
             room = self._rooms.get(room_name)
             for gi in items:
-                self._safe_put(LabeledBall(gi.color, gi.label), gi.x, gi.y)
+                x, y = self._random_item_cell(room, gi.x, gi.y)
+                self._safe_put(LabeledBall(gi.color, gi.label), x, y)
                 self._all_balls.append(gi.label)
                 if room:
                     room.register_ball(gi.label)
+
+    def _random_item_cell(self, room, default_x: int, default_y: int):
+        """Pick a random empty floor tile within `room`'s bbox.
+
+        Only cells that are empty or plain floor are eligible, so walls, doors,
+        furniture and already-placed items are skipped. Agent start tiles are
+        avoided too. Falls back to the goal-specified cell when no free tile is
+        available (or the room is unknown).
+        """
+        if room is None:
+            return default_x, default_y
+
+        starts = {tuple(self._DEFAULT_STARTS[i][0]) for i in range(self.num_agents)}
+        for cfg in self._agent_start_configs:
+            if isinstance(cfg, dict) and cfg.get("pos") is not None:
+                starts.add(tuple(cfg["pos"]))
+
+        c1, c2, r1, r2 = room.bbox
+        candidates = []
+        for x in range(max(1, c1), min(c2 + 1, self.width - 1)):
+            for y in range(max(1, r1), min(r2 + 1, self.height - 1)):
+                if (x, y) in starts:
+                    continue
+                cell = self.grid.get(x, y)
+                if cell is None or isinstance(cell, Floor):
+                    candidates.append((x, y))
+
+        if not candidates:
+            return default_x, default_y
+        return candidates[int(self.np_random.integers(len(candidates)))]
 
     def _fill_room_floor(self, color: str, c1: int, c2: int, r1: int, r2: int):
         for r in range(max(0, r1), min(r2 + 1, self.height)):

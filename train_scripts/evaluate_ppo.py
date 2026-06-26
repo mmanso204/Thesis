@@ -1,7 +1,7 @@
 """Evaluate a trained MAPPO checkpoint on the collect-food task.
 
 Runs N episodes with the trained policy and reports delivery / completion
-statistics and the reward-component breakdown.  Optionally renders.
+statistics and the reward-component breakdown. Optionally renders.
 
 Examples:
     # Evaluate the latest Stage-3 checkpoint over 50 episodes
@@ -30,7 +30,7 @@ from helper_functions.goals import GOALS
 from mappo_policy import MAPPOPolicy  # noqa: F401  (registers custom policy for load)
 from mappo import MAPPO
 
-# ── config (env-overridable so it matches whichever run is being evaluated) ──
+# config (env-overridable so it matches whichever run is being evaluated)
 ONTOLOGY_PATH = os.environ.get("ONTOLOGY_PATH", "/Users/m.manso/Downloads/thesisont_updated-2.owl")
 GOAL_NAME     = os.environ.get("GOAL_NAME", "collect_food")
 USE_ONTOLOGY  = os.environ.get("USE_ONTOLOGY", "1") not in ("0", "false", "False")
@@ -38,7 +38,7 @@ PROXIMITY     = int(os.environ.get("PROXIMITY", "5"))
 NUM_AGENTS    = 2                       # must match N_AGENTS in mappo_policy / training
 _HERE         = os.path.dirname(os.path.abspath(__file__))
 
-# Must match train_ppo.py — curriculum is goal-specific.
+# Must match train_ppo.py; curriculum is goal-specific.
 _CURRICULUM_BY_GOAL = {
     "collect_food": (
         [["banana"],
@@ -56,7 +56,6 @@ _CURRICULUM_BY_GOAL = {
     ),
 }
 CURRICULUM_STAGES, STAGE_MAX_STEPS = _CURRICULUM_BY_GOAL[GOAL_NAME]
-# ──────────────────────────────────────────────────────────────────────
 
 
 def make_env(goal, active_items, max_steps, render_mode=None):
@@ -93,7 +92,7 @@ def evaluate(checkpoint, stage, episodes, deterministic, render):
         print(f"Loaded VecNormalize stats from {os.path.basename(vecnorm_path)}")
     else:
         env = raw_env
-        print("No VecNormalize stats found — using raw env")
+        print("No VecNormalize stats found, using raw env")
 
     model = MAPPO.load(checkpoint, env=env)
 
@@ -101,9 +100,9 @@ def evaluate(checkpoint, stage, episodes, deterministic, render):
     print(f"goal={GOAL_NAME}  use_ontology={USE_ONTOLOGY}  proximity={PROXIMITY}  agents={NUM_AGENTS}")
     print(f"Stage {stage}: {active_items or 'ALL'}  ({n_target} items)  |  "
           f"max_steps={max_steps}  |  {'deterministic' if deterministic else 'stochastic'}")
-    print("─" * 72)
+    print("-" * 72)
     print(f"{'Ep':>4}  {'Reward':>9}  {'Delivered':>9}  {'Complete':>8}  {'Steps':>6}")
-    print("─" * 72)
+    print("-" * 72)
 
     results = []
     for ep in range(1, episodes + 1):
@@ -131,18 +130,18 @@ def evaluate(checkpoint, stage, episodes, deterministic, render):
         print(f"{ep:>4}  {ep_reward:>9.1f}  {delivered:>5}/{n_target:<3}  "
               f"{'✓' if complete else '✗':>8}  {steps:>6}")
 
-    # ── summary ────────────────────────────────────────────────────────
+    # summary
     rewards   = [r["reward"] for r in results]
     delivered = [r["delivered"] for r in results]
     completes = [r["complete"] for r in results]
 
-    print("─" * 72)
+    print("-" * 72)
     print(f"\nSUMMARY over {episodes} episodes (Stage {stage}, {n_target} items)")
     print(f"  Completion rate : {sum(completes)}/{episodes} = {np.mean(completes):.1%}")
     print(f"  Avg delivered   : {np.mean(delivered):.2f} / {n_target}")
     print(f"  Max delivered   : {max(delivered)} / {n_target}")
     print(f"  Avg reward      : {np.mean(rewards):.1f}  (std {np.std(rewards):.1f})")
-    print(f"  Reward range    : {min(rewards):.1f} … {max(rewards):.1f}")
+    print(f"  Reward range    : {min(rewards):.1f} .. {max(rewards):.1f}")
 
     # delivery histogram
     print(f"\n  Delivery distribution:")

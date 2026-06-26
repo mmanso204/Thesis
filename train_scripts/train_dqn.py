@@ -1,14 +1,3 @@
-"""Train the ontology-guided DQN agent.
-
-Run from scratch:
-    python train_dqn.py
-
-Resume from a checkpoint:
-    Set RESUME_FROM to the checkpoint path, e.g.:
-        RESUME_FROM = "checkpoints/dqn_ep0800.pt"
-    The episode counter and ETA will continue from where it left off.
-"""
-
 import os
 import time
 from envs.environment_multi import HouseEnv
@@ -38,7 +27,7 @@ else:
 
 N_ITEMS  = len(active_goal.target_items)
 N_AGENTS = 3
-SEP      = "─" * 72
+SEP      = "-" * 72
 
 print(f"\nGoal : {active_goal.name}")
 print(f"Items: {N_ITEMS}  |  target: {active_goal.target_room}  |  agents: {N_AGENTS}")

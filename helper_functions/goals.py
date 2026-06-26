@@ -30,18 +30,14 @@ class Goal:
 
     def __repr__(self) -> str:
         total = sum(len(v) for v in self.room_items.values())
-        return f"Goal({self.name}: {total} items across {len(self.room_items)} rooms → {self.target_room})"
+        return f"Goal({self.name}: {total} items across {len(self.room_items)} rooms -> {self.target_room})"
 
 
-# ---------------------------------------------------------------------------
-# Goal definitions
-# Each GoalItem gives: label, colour, grid-x, grid-y
-# Positions are chosen to avoid walls and furniture.
-# The 2 door keys (front door key / garden gate key) are always placed by
-# the environment regardless of the active goal.
-# ---------------------------------------------------------------------------
+# Goal definitions. Each GoalItem is (label, colour, grid-x, grid-y), placed to
+# avoid walls and furniture. The two door keys are always placed by the
+# environment regardless of the active goal.
 
-# Maps item label → ontology class name (used when asserting expected items)
+# item label -> ontology class name, used when asserting expected items
 ITEM_CLASS_MAP: dict[str, str] = {
     # Trash items
     "plastic bottle":  "PlasticBottle",

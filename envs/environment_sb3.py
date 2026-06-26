@@ -15,13 +15,8 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
-from owlapy.iri import IRI
-from owlapy.owl_individual import OWLNamedIndividual
-from owlapy.owl_property import OWLObjectProperty
-from owlapy.owl_axiom import OWLObjectPropertyAssertionAxiom
-
 from envs.environment_multi import HouseEnv, LabeledBall
-from agent import Agent, NS, PROP_IS_CARRYING
+from agent import Agent
 from helper_functions.goals import Goal
 from multigrid.core.world_object import Wall
 
@@ -106,8 +101,9 @@ class HouseEnvSB3(gym.Env):
     def _ont_features(self, current_room: Optional[str], keys_c, balls_d,
                       carrying: bool, agent_id: int) -> np.ndarray:
         ont       = self._ont
-        known     = set(ont.get_known_rooms())
-        observed  = set(ont._observed_goal_items) | set(ont._private_observed_items.get(agent_id, {}))
+        kb        = ont._kb(agent_id)
+        known     = set(kb.known_rooms)
+        observed  = set(kb.observed_goal_items)
         delivered = ont._all_delivered
 
         current_oh    = [float(r == current_room)          for r in _ROOMS]
@@ -124,7 +120,7 @@ class HouseEnvSB3(gym.Env):
             for room in _ROOMS
         ]
 
-        accessible     = ont._compute_accessible_rooms(current_room)
+        accessible     = ont._compute_accessible_rooms(agent_id, current_room)
         accessible_bin = [float(r in accessible) for r in _ROOMS]
         goal_reachable = float(self.goal.target_room in accessible)
         unreachable    = sum(
@@ -146,7 +142,7 @@ class HouseEnvSB3(gym.Env):
             float(carrying),
             goal_reachable,
             unreachable,
-            ont._ont_reachable_cached,
+            kb.ont_reachable_cached,
         ]
         return np.array(
             current_oh + known_bin + items_bin + target_oh
@@ -156,7 +152,7 @@ class HouseEnvSB3(gym.Env):
 
     def _build_global_state(self) -> np.ndarray:
         """Global state for the centralized critic: exact item positions + status.
-        Never split into per-agent slices — the actor never sees this."""
+        Never split into per-agent slices; the actor never sees this."""
         delivered = self._ont._all_delivered
         carried   = {v for v in self._ont._agent_carrying.values() if v}
         feats: list = []
@@ -210,28 +206,13 @@ class HouseEnvSB3(gym.Env):
                     pi = self.env.agents[_i].state.pos
                     pj = self.env.agents[_j].state.pos
                     if abs(pi[0]-pj[0]) + abs(pi[1]-pj[1]) <= self.proximity_threshold:
-                        self._ont._share_knowledge(_i)
-                        self._ont._share_knowledge(_j)
+                        self._ont._merge_abox(_i, _j)
 
         for i in range(self.num_agents):
             now_c = getattr(self.env.agents[i].state, "carrying", None)
             g_lbl = getattr(now_c, "label", None)
             g_lbl = g_lbl if (g_lbl and g_lbl in self.goal.target_items) else None
-            if self._ont._agent_carrying.get(i) != g_lbl:
-                if self._ont._agent_carrying_axioms.get(i) is not None:
-                    try:
-                        self._ont.Agent_ont.remove_axiom(self._ont._agent_carrying_axioms[i])
-                    except Exception:
-                        pass
-                    self._ont._agent_carrying_axioms[i] = None
-                if g_lbl:
-                    a_ind  = OWLNamedIndividual(IRI.create(NS, f"agent_{i}"))
-                    it_ind = OWLNamedIndividual(IRI.create(NS, f"expected_{g_lbl.replace(' ', '_')}"))
-                    axiom  = OWLObjectPropertyAssertionAxiom(
-                        a_ind, OWLObjectProperty(IRI.create(NS, PROP_IS_CARRYING)), it_ind)
-                    self._ont.Agent_ont.add_axiom(axiom)
-                    self._ont._agent_carrying_axioms[i] = axiom
-                self._ont._agent_carrying[i] = g_lbl
+            self._ont.set_carrying(i, g_lbl)
 
         _now_delivered = set().union(
             *(set(infos.get(i, {}).get("agent_balls_delivered", [])) for i in range(self.num_agents))
@@ -360,9 +341,12 @@ class HouseEnvSB3(gym.Env):
 
         self._update_ont(obs_next, infos)
 
+        _locked = set()
+        for _kb in self._ont._kbs.values():
+            _locked |= _kb.locked_doors
         reach_sig = (
             frozenset(self._ont._agent_room.values()),
-            frozenset(self._ont._locked_doors),
+            frozenset(_locked),
         )
         if reach_sig != self._last_reach_sig:
             self._last_reach_sig = reach_sig
@@ -489,7 +473,7 @@ class HouseEnvSB3(gym.Env):
         info_out = {
             "task_complete":     _active.issubset(self._ont._all_delivered),
             "balls_delivered":   len(self._ont._all_delivered & _active),
-            "items_observed":    len(set(self._ont._observed_goal_items) & _active),
+            "items_observed":    len(self._ont.all_observed_items() & _active),
             "rooms_explored":    len(self._ont.get_known_rooms()),
             "reward_components": dict(self._ep_components) if (terminated or truncated) else None,
             "reasoner_stats":    self._ont.reasoner_stats() if (terminated or truncated) else None,

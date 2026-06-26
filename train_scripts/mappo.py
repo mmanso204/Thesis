@@ -1,10 +1,10 @@
 """Strict MAPPO algorithm (Yu et al. 2022).
 
-Subclasses SB3's PPO, overriding only `train()` to apply a separate clipped
-PPO loss per agent, then average — exactly as described in the paper.
+Subclasses SB3's PPO, overriding only train() to apply a separate clipped PPO
+loss per agent and then average, as described in the paper.
 
-  Standard PPO:  L = clip(Π_i r_i  × A)        (product of ratios)
-  Strict MAPPO:  L = (1/N) Σ_i clip(r_i × A_i)  (sum of per-agent losses)
+  Standard PPO:  L = clip(Pi_i r_i  * A)        (product of ratios)
+  Strict MAPPO:  L = (1/N) Sum_i clip(r_i * A_i)  (sum of per-agent losses)
 
 For cooperative MARL with shared reward, A_i = A for all agents, so the
 difference is purely in how clipping is applied: per-agent vs joint.
@@ -25,7 +25,7 @@ from mappo_policy import N_AGENTS
 class MAPPO(PPO):
     """Strict MAPPO: per-agent clipped PPO loss with centralized critic.
 
-    Drop-in replacement for PPO — same constructor signature, same checkpointing.
+    Same constructor signature and checkpointing as PPO.
     Requires MAPPOPolicy (which has get_per_agent_log_probs).
     """
 
@@ -41,16 +41,16 @@ class MAPPO(PPO):
         buf     = self.rollout_buffer
         n_total = buf.buffer_size * buf.n_envs
 
-        # ── flatten (buffer_size, n_envs, ...) → (n_total, ...) ─────────────────
-        # SB3's buf.get() does this via swap_and_flatten; we call _get_samples
-        # directly so we must trigger it manually before any indexing.
+        # flatten (buffer_size, n_envs, ...) to (n_total, ...). SB3's buf.get()
+        # does this via swap_and_flatten; we call _get_samples directly, so we
+        # must trigger it manually before any indexing.
         if not buf.generator_ready:
             for _t in ["observations", "actions", "values", "log_probs",
                        "advantages", "returns"]:
                 buf.__dict__[_t] = buf.swap_and_flatten(buf.__dict__[_t])
             buf.generator_ready = True
 
-        # ── per-agent OLD log-probs — computed BEFORE any gradient updates ──────
+        # per-agent OLD log-probs, computed before any gradient updates
         with th.no_grad():
             obs_flat = th.tensor(
                 buf.observations.reshape(n_total, -1),
@@ -63,7 +63,7 @@ class MAPPO(PPO):
             old_pa_lps = self.policy.get_per_agent_log_probs(obs_flat, act_flat)
             # shape: (n_total, N_AGENTS)
 
-        # ── training epochs ───────────────────────────────────────────────────
+        # training epochs
         pg_losses, vf_losses, ent_losses, clip_fracs, kl_divs = [], [], [], [], []
         continue_training = True
 
@@ -78,7 +78,7 @@ class MAPPO(PPO):
                     continue
 
                 data    = buf._get_samples(batch_idx)
-                actions = data.actions  # keep float — SB3 MultiDiscrete expects float
+                actions = data.actions  # keep float; SB3 MultiDiscrete expects float
 
                 # centralized critic value + joint entropy
                 values, log_prob, entropy = self.policy.evaluate_actions(
@@ -86,7 +86,7 @@ class MAPPO(PPO):
                 )
                 values = values.flatten()
 
-                # current per-agent log-probs (new policy) — long() needed for Categorical
+                # current per-agent log-probs (new policy); long() needed for Categorical
                 new_pa_lps   = self.policy.get_per_agent_log_probs(data.observations, actions.long())
                 old_pa_batch = old_pa_lps[batch_idx]  # (batch, N_AGENTS)
 
@@ -94,7 +94,7 @@ class MAPPO(PPO):
                 adv = data.advantages
                 adv = (adv - adv.mean()) / (adv.std() + 1e-8)
 
-                # ── strict MAPPO: independent clipped loss per agent ──────────
+                # strict MAPPO: independent clipped loss per agent
                 pg_loss = th.zeros(1, device=self.device)
                 for i in range(N_AGENTS):
                     r_i = th.exp(new_pa_lps[:, i] - old_pa_batch[:, i])
