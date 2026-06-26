@@ -25,10 +25,16 @@ mkdir -p "$OUT_DIR"
 RENDER_FLAG=""
 if [ "${RENDER:-0}" = "1" ]; then RENDER_FLAG="--render"; fi
 
+# Match the original result files, which were generated with sampled (stochastic)
+# actions. STOCHASTIC=1 (default) samples; STOCHASTIC=0 uses deterministic argmax.
+STOCH_FLAG=""
+if [ "${STOCHASTIC:-1}" = "1" ]; then STOCH_FLAG="--stochastic"; fi
+
 echo "======================================================"
 echo " Evaluation sweep"
 echo "   episodes   : $EPISODES"
 echo "   stage index: $STAGE (0=1item, 1=2items, 2=4items, 3=all)"
+echo "   actions    : $([ "${STOCHASTIC:-1}" = "1" ] && echo stochastic || echo deterministic)"
 echo "   ontology   : $ONTOLOGY_PATH"
 echo "   output     : $OUT_DIR/"
 echo "======================================================"
@@ -77,6 +83,7 @@ for r in "${SELECTED[@]}"; do
         --checkpoint "$ckpt_zip" \
         --stage "$STAGE" \
         --episodes "$EPISODES" \
+        $STOCH_FLAG \
         $RENDER_FLAG \
     2>&1 | tee "$out_file"
 
