@@ -1,4 +1,5 @@
 import csv
+import glob
 import os
 import re
 import sys
@@ -28,11 +29,30 @@ RUN_NAME       = os.environ.get("RUN_NAME", "ppo")             # output folder s
 NUM_AGENTS     = 2                                             # must match N_AGENTS in mappo_policy
 TOTAL_STEPS    = int(os.environ.get("TOTAL_STEPS", "45000000"))
 SAVE_EVERY_EPS = 200
+# Keep only the most recent KEEP_LAST periodic checkpoints (0 = keep all). Caps
+# disk growth on long runs; ppo_final and stage checkpoints are never pruned.
+KEEP_LAST      = int(os.environ.get("KEEP_LAST", "3"))
 _HERE          = os.path.dirname(os.path.abspath(__file__))
 RESUME_FROM    = os.environ.get("RESUME_FROM") or None
 RESUME_STAGE   = int(os.environ.get("RESUME_STAGE", "0"))
 CKPT_DIR       = os.path.join(_HERE, f"checkpoints_{RUN_NAME}")
 LOG_CSV        = os.path.join(CKPT_DIR, "training_log.csv")
+
+
+def _prune_checkpoints(keep: int):
+    """Delete all but the `keep` most recent periodic ppo_ep*.zip (and their
+    _vecnorm.pkl) so a multi-day run cannot fill the disk. ppo_final and any
+    stage_* checkpoints are left untouched."""
+    if keep <= 0:
+        return
+    zips = sorted(glob.glob(os.path.join(CKPT_DIR, "ppo_ep*.zip")),
+                  key=os.path.getmtime)
+    for old in zips[:-keep]:
+        for f in (old, old[:-4] + "_vecnorm.pkl"):
+            try:
+                os.remove(f)
+            except OSError:
+                pass
 
 # Parallel rollout collection. Set N_ENVS to the number of CPU cores available.
 # Each env runs in its own process with its own JVM/ontology (memory ~ N_ENVS JVMs).
@@ -208,6 +228,7 @@ class PPOCallback(BaseCallback):
                 env = self.model.get_env()
                 if isinstance(env, VecNormalize):
                     env.save(path + "_vecnorm.pkl")
+                _prune_checkpoints(KEEP_LAST)
                 n = self.save_every
                 m = {k: np.mean(v[-n:]) for k, v in self._comp_buf.items()}
                 print(self.SEP)
