@@ -11,64 +11,64 @@ SQ1 - Does the ontology help? (vs vanilla baseline run2)
 ------------------------------------------------------------------------
  REWARD:
   run1 (Ont+Shared)  vs  run2 (Vanilla)
-    A      mean=  742.18  sd=  73.00  median=  731.90  n=50
-    B      mean=  661.29  sd= 125.28  median=  717.80  n=50
-    diff (A-B) = +80.90
-    Mann-Whitney U = 2004   p = 2.030e-07  ***
-    Welch t(78.8) = +3.95   p = 1.719e-04  ***
-    Cliff's delta = +0.603  (large)
-    Cohen's d     = +0.789  (medium)
+    A      mean=  317.31  sd= 118.56  median=  367.90  n=50
+    B      mean=  332.08  sd= 114.07  median=  368.40  n=50
+    diff (A-B) = -14.77
+    Mann-Whitney U = 1130   p = 4.099e-01  ns
+    Welch t(97.9) = -0.63   p = 5.271e-01  ns
+    Cliff's delta = -0.096  (negligible)
+    Cohen's d     = -0.127  (negligible)
 
   run3 (Ont+Indep)   vs  run2 (Vanilla)
-    A      mean=  778.48  sd= 121.86  median=  729.80  n=50
-    B      mean=  661.29  sd= 125.28  median=  717.80  n=50
-    diff (A-B) = +117.20
-    Mann-Whitney U = 2076   p = 1.214e-08  ***
-    Welch t(97.9) = +4.74   p = 7.201e-06  ***
-    Cliff's delta = +0.661  (large)
-    Cohen's d     = +0.948  (large)
+    A      mean=  265.56  sd= 144.57  median=  365.40  n=50
+    B      mean=  332.08  sd= 114.07  median=  368.40  n=50
+    diff (A-B) = -66.52
+    Mann-Whitney U = 956   p = 4.264e-02  *
+    Welch t(93.0) = -2.55   p = 1.226e-02  *
+    Cliff's delta = -0.236  (small)
+    Cohen's d     = -0.511  (medium)
 
  DELIVERY (items/episode):
   run1 (Ont+Shared)  vs  run2 (Vanilla)
-    A      mean=    2.06  sd=   0.24  median=    2.00  n=50
-    B      mean=    2.14  sd=   0.35  median=    2.00  n=50
-    diff (A-B) = -0.08
-    Mann-Whitney U = 1150   p = 1.868e-01  ns
-    Welch t(86.6) = -1.33   p = 1.864e-01  ns
-    Cliff's delta = -0.080  (negligible)
-    Cohen's d     = -0.266  (small)
+    A      mean=    1.64  sd=   0.63  median=    2.00  n=50
+    B      mean=    1.68  sd=   0.55  median=    2.00  n=50
+    diff (A-B) = -0.04
+    Mann-Whitney U = 1236   p = 9.056e-01  ns
+    Welch t(96.2) = -0.34   p = 7.364e-01  ns
+    Cliff's delta = -0.011  (negligible)
+    Cohen's d     = -0.068  (negligible)
 
   run3 (Ont+Indep)   vs  run2 (Vanilla)
-    A      mean=    2.24  sd=   0.43  median=    2.00  n=50
-    B      mean=    2.14  sd=   0.35  median=    2.00  n=50
-    diff (A-B) = +0.10
-    Mann-Whitney U = 1375   p = 2.066e-01  ns
-    Welch t(94.1) = +1.27   p = 2.065e-01  ns
-    Cliff's delta = +0.100  (negligible)
-    Cohen's d     = +0.254  (small)
+    A      mean=    1.38  sd=   0.75  median=    2.00  n=50
+    B      mean=    1.68  sd=   0.55  median=    2.00  n=50
+    diff (A-B) = -0.30
+    Mann-Whitney U = 992   p = 3.765e-02  *
+    Welch t(89.8) = -2.27   p = 2.538e-02  *
+    Cliff's delta = -0.206  (small)
+    Cohen's d     = -0.455  (small)
 
 ------------------------------------------------------------------------
 SQ3 - Shared vs Independent ABox (run1 prox5 vs run3 prox0)
 ------------------------------------------------------------------------
  REWARD:
   run1 (Shared)  vs  run3 (Indep)
-    A      mean=  742.18  sd=  73.00  median=  731.90  n=50
-    B      mean=  778.48  sd= 121.86  median=  729.80  n=50
-    diff (A-B) = -36.30
-    Mann-Whitney U = 1228   p = 8.847e-01  ns
-    Welch t(80.2) = -1.81   p = 7.452e-02  ns
-    Cliff's delta = -0.017  (negligible)
-    Cohen's d     = -0.361  (small)
+    A      mean=  317.31  sd= 118.56  median=  367.90  n=50
+    B      mean=  265.56  sd= 144.57  median=  365.40  n=50
+    diff (A-B) = +51.76
+    Mann-Whitney U = 1368   p = 4.178e-01  ns
+    Welch t(94.4) = +1.96   p = 5.326e-02  ns
+    Cliff's delta = +0.094  (negligible)
+    Cohen's d     = +0.391  (small)
 
  DELIVERY (items/episode):
   run1 (Shared)  vs  run3 (Indep)
-    A      mean=    2.06  sd=   0.24  median=    2.00  n=50
-    B      mean=    2.24  sd=   0.43  median=    2.00  n=50
-    diff (A-B) = -0.18
-    Mann-Whitney U = 1025   p = 1.234e-02  *
-    Welch t(76.7) = -2.58   p = 1.184e-02  *
-    Cliff's delta = -0.180  (small)
-    Cohen's d     = -0.516  (medium)
+    A      mean=    1.64  sd=   0.63  median=    2.00  n=50
+    B      mean=    1.38  sd=   0.75  median=    2.00  n=50
+    diff (A-B) = +0.26
+    Mann-Whitney U = 1485   p = 5.894e-02  ns
+    Welch t(95.1) = +1.87   p = 6.439e-02  ns
+    Cliff's delta = +0.188  (small)
+    Cohen's d     = +0.374  (small)
 
 ========================================================================
 NOTE: All 4 runs are single training seeds; these tests compare
