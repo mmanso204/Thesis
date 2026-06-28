@@ -31,6 +31,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy import stats
 
+# Larger fonts for thesis figures (legible at print size).
+plt.rcParams.update({
+    "font.size":        16,
+    "axes.titlesize":   17,
+    "axes.labelsize":   17,
+    "xtick.labelsize":  15,
+    "ytick.labelsize":  15,
+    "legend.fontsize":  15,
+})
+
 # Run definitions (colours/labels match plot_results.py)
 RUNS_META = [
     dict(name="run1_ont_food_prox5", label="Ont + Shared\n(run1)",  short="run1", color="#1f77b4"),
@@ -131,7 +141,7 @@ def main():
     colors = [data[n]["color"] for n in order]
     labels = [data[n]["label"] for n in order]
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(10, 6))
     bp = ax.boxplot(rewards, patch_artist=True, widths=0.55, showmeans=True,
                     meanprops=dict(marker="D", markerfacecolor="white",
                                    markeredgecolor="black", markersize=6))
@@ -147,7 +157,7 @@ def main():
     ax.set_xticks(range(1, len(order) + 1))
     ax.set_xticklabels(labels)
     ax.set_ylabel("Episode reward")
-    ax.set_title("Evaluation reward over 50 stochastic episodes (Stage 2, 4 items)")
+    ax.set_title("Evaluation reward over 50 stochastic episodes\n(Stage 2, 4 items)")
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     for ext in ("pdf", "png"):
@@ -155,7 +165,7 @@ def main():
     plt.close(fig)
 
     # Figure 2: mean items delivered (bar + 95% CI)
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(10, 6))
     means = [data[n]["delivered"].mean() for n in order]
     cis = []
     for n in order:
@@ -166,7 +176,7 @@ def main():
                   color=colors, alpha=0.7, edgecolor="black")
     for i, n in enumerate(order):
         ax.text(i, means[i] + cis[i] + 0.02, f"{means[i]:.2f}",
-                ha="center", va="bottom", fontsize=10)
+                ha="center", va="bottom", fontsize=15)
     n_items = data[order[0]]["n_items"]
     ax.axhline(n_items, ls="--", color="gray", lw=1, label=f"all {n_items} items")
     ax.set_xticks(range(len(order)))

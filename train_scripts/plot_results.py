@@ -27,6 +27,16 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.patches import Patch
 
+# Larger fonts for thesis figures (legible at print size).
+plt.rcParams.update({
+    "font.size":        16,
+    "axes.titlesize":   17,
+    "axes.labelsize":   17,
+    "xtick.labelsize":  15,
+    "ytick.labelsize":  15,
+    "legend.fontsize":  13,
+})
+
 # Run definitions: must match run_experiments.sh
 RUNS_META = [
     dict(name="run1_ont_food_prox5",  label="Ont + Shared (run1)",  color="#1f77b4", ls="-",   goal="collect_food"),
@@ -96,7 +106,7 @@ def _apply_defaults(ax: plt.Axes, title: str, xlabel: str, ylabel: str,
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=12)
     ax.grid(True, alpha=0.3)
     if pct_y:
         ax.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
@@ -179,7 +189,7 @@ def fig_stage_progression(run_data: list[dict], out_dir: Path) -> None:
     ax.set_xlabel("Environment steps (M)")
     ax.set_title("Curriculum stage progression")
     ax.legend(handles=[Patch(facecolor=stage_colors[i], label=stage_labels[i])
-                        for i in range(4)], loc="lower right", fontsize=8)
+                        for i in range(4)], loc="lower right", fontsize=12)
     ax.grid(True, axis="x", alpha=0.3)
     fig.tight_layout()
     _save(fig, out_dir, "stage_progression")
@@ -201,7 +211,7 @@ def fig_overview_combined(run_data: list[dict], out_dir: Path, win: int) -> None
                   label=m["label"], color=m["color"], linestyle=m["ls"], lw=1.8)
     ax_r.set_title("Training overview: all runs")
     ax_r.set_ylabel(f"Avg-50 reward\n(smoothed, win={win})")
-    ax_r.legend(fontsize=8, ncol=2)
+    ax_r.legend(fontsize=12, ncol=2)
     ax_r.grid(True, alpha=0.3)
 
     # Panel 2: delivery fraction (each run uses its own goal's stage map)
@@ -242,7 +252,7 @@ def fig_overview_combined(run_data: list[dict], out_dir: Path, win: int) -> None
     ax_s.set_ylabel("Curriculum\nstage")
     ax_s.set_xlabel("Environment steps (M)")
     ax_s.legend(handles=[Patch(facecolor=stage_colors[i], label=stage_labels[i])
-                         for i in range(4)], loc="lower right", fontsize=8, ncol=2)
+                         for i in range(4)], loc="lower right", fontsize=12, ncol=2)
     ax_s.grid(True, axis="x", alpha=0.3)
 
     _save(fig, out_dir, "overview_combined")
@@ -320,7 +330,7 @@ def fig_sq5(run_data: list[dict], out_dir: Path, win: int) -> None:
                     "Delivered / active items", pct_y=True)
     axes[1].annotate("Note: tasks differ\n(food vs trash)",
                      xy=(0.02, 0.95), xycoords="axes fraction",
-                     fontsize=8, va="top", color="grey")
+                     fontsize=12, va="top", color="grey")
     fig.suptitle("SQ5: Framework Generalisation, Food vs Trash",
                  fontweight="bold")
     fig.tight_layout()
